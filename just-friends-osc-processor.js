@@ -998,4 +998,4 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor('just-friends-processor', JustFriendsProcessor);
+registerProcessor('just-friends-osc-processor', JustFriendsProcessor);
