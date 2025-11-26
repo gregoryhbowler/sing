@@ -13,8 +13,6 @@ export class ModulationMatrixNode extends AudioWorkletNode {
       channelInterpretation: 'discrete'
     });
     
-    this.context = context;
-    
     // Store parameter references for each slot
     this.slots = [];
     for (let i = 0; i < 5; i++) {
