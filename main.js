@@ -1,7 +1,8 @@
-// main.js - Phase 5: Three Sisters Filter Integration
+// main.js - Phase 5 + Modulation Matrix
 //
 // Signal flow:
 // JF #1 → Quantizer → Mangrove A (pitch CV)
+// JF #1 (2N-6N) → Modulation Matrix → [27 destinations]
 // Mangrove B FORMANT → Mangrove A FM (audio-rate through-zero FM)
 // Mangrove A FORMANT → Three Sisters audio input
 // Mangrove C FORMANT → Three Sisters FM input
@@ -11,6 +12,7 @@ import { JustFriendsNode } from './JustFriendsNode.js';
 import { QuantizerNode } from './QuantizerNode.js';
 import { MangroveNode } from './MangroveNode.js';
 import { ThreeSistersNode } from './ThreeSistersNode.js';
+import { ModulationMatrixNode } from './ModulationMatrixNode.js';
 
 class Phase5App {
   constructor() {
@@ -24,6 +26,10 @@ class Phase5App {
     this.mangroveC = null;
     this.threeSisters = null;
     this.masterGain = null;
+    
+    // Modulation matrix
+    this.modMatrix = null;
+    this.destinationMap = null;
     
     // FM routing
     this.fmGainB = null;
@@ -53,8 +59,9 @@ class Phase5App {
       await this.audioContext.audioWorklet.addModule('./quantizer-processor.js');
       await this.audioContext.audioWorklet.addModule('./mangrove-processor.js');
       await this.audioContext.audioWorklet.addModule('./three-sisters-processor.js');
+      await this.audioContext.audioWorklet.addModule('./modulation-matrix-processor.js');
       
-      console.log('%c✓ All AudioWorklets loaded - Phase 5', 'color: green; font-weight: bold');
+      console.log('%c✓ All AudioWorklets loaded - Phase 5 + Modulation Matrix', 'color: green; font-weight: bold');
       
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
@@ -63,6 +70,7 @@ class Phase5App {
       this.mangroveB = new MangroveNode(this.audioContext);
       this.mangroveC = new MangroveNode(this.audioContext);
       this.threeSisters = new ThreeSistersNode(this.audioContext);
+      this.modMatrix = new ModulationMatrixNode(this.audioContext);
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = 0.3;
 
@@ -94,26 +102,80 @@ class Phase5App {
       this.scope2Analyser.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
       
-      console.log('=== Phase 5 Signal Flow ===');
-      console.log('JF #1 → Quantizer → Mangrove A pitch');
+      // 6. JF slopes 2N-6N → Modulation Matrix
+      this.jf1.get2NOutput().connect(this.modMatrix.getInput(), 0, 0);
+      this.jf1.get3NOutput().connect(this.modMatrix.getInput(), 0, 1);
+      this.jf1.get4NOutput().connect(this.modMatrix.getInput(), 0, 2);
+      this.jf1.get5NOutput().connect(this.modMatrix.getInput(), 0, 3);
+      this.jf1.get6NOutput().connect(this.modMatrix.getInput(), 0, 4);
+      
+      console.log('=== Phase 5 + Modulation Matrix Signal Flow ===');
+      console.log('JF #1 IDENTITY → Quantizer → Mangrove A pitch');
+      console.log('JF #1 (2N-6N) → Modulation Matrix → [27 destinations]');
       console.log('Mangrove B FORMANT → Mangrove A FM');
       console.log('Mangrove A FORMANT → Three Sisters audio input');
       console.log('Mangrove C FORMANT → Three Sisters FM input');
       console.log('Three Sisters ALL → Scope 2 → Master → Output');
       
+      // Build destination map for modulation matrix
+      this.buildDestinationMap();
+      
       this.configureDefaults();
       
-      document.getElementById('status').textContent = 'Ready - Filter System Active';
+      document.getElementById('status').textContent = 'Ready - System Active';
       document.getElementById('startBtn').disabled = false;
       
       this.syncUIWithParameters();
       
-      console.log('%c✓ Phase 5 initialized - Three Sisters filter ready!', 'color: green; font-weight: bold');
+      console.log('%c✓ Phase 5 + Modulation Matrix initialized!', 'color: green; font-weight: bold');
+      console.log('%c✓ 5 modulation slots ready for routing', 'color: blue; font-weight: bold');
       
     } catch (error) {
       console.error('Failed to initialize:', error);
       document.getElementById('status').textContent = 'Error: ' + error.message;
     }
+  }
+
+  buildDestinationMap() {
+    this.destinationMap = {
+      // Just Friends #1
+      'jf1.time': this.jf1.params.time,
+      'jf1.intone': this.jf1.params.intone,
+      'jf1.ramp': this.jf1.params.ramp,
+      'jf1.curve': this.jf1.params.curve,
+      
+      // Quantizer
+      'quant.depth': this.quantizer.params.depth,
+      'quant.offset': this.quantizer.params.offset,
+      
+      // Mangrove A
+      'ma.pitch': this.mangroveA.params.pitchKnob,
+      'ma.barrel': this.mangroveA.params.barrelKnob,
+      'ma.formant': this.mangroveA.params.formantKnob,
+      'ma.air': this.mangroveA.params.airKnob,
+      'ma.fmIndex': this.mangroveA.params.fmIndex,
+      
+      // Mangrove B
+      'mb.pitch': this.mangroveB.params.pitchKnob,
+      'mb.barrel': this.mangroveB.params.barrelKnob,
+      'mb.formant': this.mangroveB.params.formantKnob,
+      
+      // Mangrove C
+      'mc.pitch': this.mangroveC.params.pitchKnob,
+      'mc.barrel': this.mangroveC.params.barrelKnob,
+      'mc.formant': this.mangroveC.params.formantKnob,
+      
+      // Three Sisters
+      'ts.freq': this.threeSisters.params.freq,
+      'ts.span': this.threeSisters.params.span,
+      'ts.quality': this.threeSisters.params.quality,
+      'ts.fmAtten': this.threeSisters.params.fmAttenuverter,
+      
+      // Master
+      'master.volume': this.masterGain.gain
+    };
+    
+    console.log('✓ Destination map built - 27 parameters available');
   }
 
   configureDefaults() {
@@ -150,14 +212,13 @@ class Phase5App {
     this.mangroveC.setAir(0.8);
 
     // Three Sisters: Default filter settings
-    this.threeSisters.setFreq(0.5);      // Mid-range cutoff (~500Hz)
-    this.threeSisters.setSpan(0.5);      // No spread (noon)
-    this.threeSisters.setQuality(0.5);   // Neutral Q (0.707, Butterworth)
-    this.threeSisters.setMode(0);        // Crossover mode
-    this.threeSisters.setFMAttenuverter(0.5); // FM off (noon position)
+    this.threeSisters.setFreq(0.5);
+    this.threeSisters.setSpan(0.5);
+    this.threeSisters.setQuality(0.5);
+    this.threeSisters.setMode(0);
+    this.threeSisters.setFMAttenuverter(0.5);
     
     console.log('Default settings configured');
-    console.log('Three Sisters: CROSSOVER mode, neutral Q=0.707, ~500Hz cutoff');
   }
 
   setupScope1() {
@@ -268,9 +329,9 @@ class Phase5App {
     this.startScope2();
     
     document.getElementById('startBtn').innerHTML = '<span class="btn-icon">⏸</span> Stop';
-    document.getElementById('status').textContent = 'Running - Filter Active';
+    document.getElementById('status').textContent = 'Running - System Active';
     
-    console.log('%c▶ Phase 5 system running', 'color: green; font-weight: bold');
+    console.log('%c▶ System running', 'color: green; font-weight: bold');
   }
 
   stop() {
@@ -304,11 +365,214 @@ class Phase5App {
     console.log(`FM B → A: ${enabled ? 'ENABLED' : 'DISABLED'}`);
   }
 
+  // ========== MODULATION MATRIX UI ==========
+
+  generateModSlotHTML(slotIndex) {
+    const slopeNames = ['2N', '3N', '4N', '5N', '6N'];
+    const slopeName = slopeNames[slotIndex];
+    const slotNumber = slotIndex + 1;
+    
+    return `
+      <div class="mod-slot" data-slot="${slotIndex}">
+        <div class="mod-slot-header">
+          <span class="mod-slot-label">Slot ${slotNumber} (${slopeName})</span>
+          <label class="mod-toggle">
+            <input type="checkbox" class="mod-enable" data-slot="${slotIndex}">
+            <span class="mod-toggle-text">Enable</span>
+          </label>
+        </div>
+        
+        <div class="mod-slot-controls">
+          <div class="mod-control-row">
+            <label>destination</label>
+            <select class="mod-destination" data-slot="${slotIndex}">
+              <option value="">-- none --</option>
+              <optgroup label="Just Friends #1">
+                <option value="jf1.time">JF1: Time</option>
+                <option value="jf1.intone">JF1: Intone</option>
+                <option value="jf1.ramp">JF1: Ramp</option>
+                <option value="jf1.curve">JF1: Curve</option>
+              </optgroup>
+              <optgroup label="Quantizer">
+                <option value="quant.depth">Quantizer: Depth</option>
+                <option value="quant.offset">Quantizer: Offset</option>
+              </optgroup>
+              <optgroup label="Mangrove A">
+                <option value="ma.pitch">Mangrove A: Pitch</option>
+                <option value="ma.barrel">Mangrove A: Barrel</option>
+                <option value="ma.formant">Mangrove A: Formant</option>
+                <option value="ma.air">Mangrove A: Air</option>
+                <option value="ma.fmIndex">Mangrove A: FM Depth</option>
+              </optgroup>
+              <optgroup label="Mangrove B">
+                <option value="mb.pitch">Mangrove B: Pitch</option>
+                <option value="mb.barrel">Mangrove B: Barrel</option>
+                <option value="mb.formant">Mangrove B: Formant</option>
+              </optgroup>
+              <optgroup label="Mangrove C">
+                <option value="mc.pitch">Mangrove C: Pitch</option>
+                <option value="mc.barrel">Mangrove C: Barrel</option>
+                <option value="mc.formant">Mangrove C: Formant</option>
+              </optgroup>
+              <optgroup label="Three Sisters">
+                <option value="ts.freq">Three Sisters: Freq</option>
+                <option value="ts.span">Three Sisters: Span</option>
+                <option value="ts.quality">Three Sisters: Quality</option>
+                <option value="ts.fmAtten">Three Sisters: FM Atten</option>
+              </optgroup>
+              <optgroup label="Master">
+                <option value="master.volume">Master: Volume</option>
+              </optgroup>
+            </select>
+          </div>
+          
+          <div class="mod-control-row">
+            <label>mode</label>
+            <select class="mod-mode" data-slot="${slotIndex}">
+              <option value="0">Unipolar (0→1)</option>
+              <option value="1">Bipolar (-1→+1)</option>
+              <option value="2">Inv Unipolar (1→0)</option>
+              <option value="3">Inv Bipolar (+1→-1)</option>
+            </select>
+          </div>
+          
+          <div class="mod-control-row">
+            <label>depth</label>
+            <input type="range" class="mod-depth" data-slot="${slotIndex}" 
+                   min="0" max="1" step="0.01" value="0.5">
+            <span class="mod-value mod-depth-value" data-slot="${slotIndex}">0.50</span>
+          </div>
+          
+          <div class="mod-control-row">
+            <label>offset</label>
+            <input type="range" class="mod-offset" data-slot="${slotIndex}" 
+                   min="-1" max="1" step="0.01" value="0">
+            <span class="mod-value mod-offset-value" data-slot="${slotIndex}">0.00</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  initModMatrixUI() {
+    const container = document.getElementById('modSlotsContainer');
+    if (!container) {
+      console.warn('Mod matrix container not found - skipping mod matrix UI');
+      return;
+    }
+    
+    // Generate 5 slots
+    for (let i = 0; i < 5; i++) {
+      container.innerHTML += this.generateModSlotHTML(i);
+    }
+    
+    // Bind event handlers
+    this.bindModMatrixControls();
+    
+    console.log('✓ Modulation matrix UI initialized');
+  }
+
+  bindModMatrixControls() {
+    // Enable/disable checkboxes
+    document.querySelectorAll('.mod-enable').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const slot = parseInt(e.target.dataset.slot);
+        const enabled = e.target.checked;
+        this.handleModSlotEnable(slot, enabled);
+      });
+    });
+    
+    // Destination dropdowns
+    document.querySelectorAll('.mod-destination').forEach(select => {
+      select.addEventListener('change', (e) => {
+        const slot = parseInt(e.target.dataset.slot);
+        const destination = e.target.value;
+        this.handleModDestinationChange(slot, destination);
+      });
+    });
+    
+    // Mode dropdowns
+    document.querySelectorAll('.mod-mode').forEach(select => {
+      select.addEventListener('change', (e) => {
+        const slot = parseInt(e.target.dataset.slot);
+        const mode = parseInt(e.target.value);
+        this.modMatrix.setMode(slot, mode);
+      });
+    });
+    
+    // Depth sliders
+    document.querySelectorAll('.mod-depth').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const slot = parseInt(e.target.dataset.slot);
+        const value = parseFloat(e.target.value);
+        this.modMatrix.setDepth(slot, value);
+        
+        const display = document.querySelector(`.mod-depth-value[data-slot="${slot}"]`);
+        if (display) display.textContent = value.toFixed(2);
+      });
+    });
+    
+    // Offset sliders
+    document.querySelectorAll('.mod-offset').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const slot = parseInt(e.target.dataset.slot);
+        const value = parseFloat(e.target.value);
+        this.modMatrix.setOffset(slot, value);
+        
+        const display = document.querySelector(`.mod-offset-value[data-slot="${slot}"]`);
+        if (display) display.textContent = value.toFixed(2);
+      });
+    });
+  }
+
+  handleModSlotEnable(slot, enabled) {
+    this.modMatrix.setEnabled(slot, enabled);
+    
+    // Update UI
+    const slotElement = document.querySelector(`.mod-slot[data-slot="${slot}"]`);
+    if (slotElement) {
+      if (enabled) {
+        slotElement.classList.add('active');
+      } else {
+        slotElement.classList.remove('active');
+      }
+    }
+    
+    console.log(`Mod slot ${slot} ${enabled ? 'ENABLED' : 'DISABLED'}`);
+  }
+
+  handleModDestinationChange(slot, destination) {
+    if (!destination || destination === '') {
+      // Clear destination
+      this.modMatrix.clearSlot(slot);
+      console.log(`Mod slot ${slot} destination cleared`);
+      return;
+    }
+    
+    // Look up the AudioParam
+    const audioParam = this.destinationMap[destination];
+    
+    if (!audioParam) {
+      console.error(`Unknown destination: ${destination}`);
+      return;
+    }
+    
+    // Set the destination
+    this.modMatrix.setDestination(slot, audioParam);
+    console.log(`Mod slot ${slot} → ${destination}`);
+  }
+
+  // ========== UI SETUP ==========
+
   setupUI() {
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.bindControls());
+      document.addEventListener('DOMContentLoaded', () => {
+        this.bindControls();
+        this.initModMatrixUI();
+      });
     } else {
       this.bindControls();
+      this.initModMatrixUI();
     }
   }
 
@@ -511,7 +775,7 @@ class Phase5App {
       fmEnable.checked = false;
     }
     
-    console.log('UI synced - Phase 5 ready');
+    console.log('UI synced - ready to modulate!');
   }
 }
 
