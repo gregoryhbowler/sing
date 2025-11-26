@@ -1,14 +1,12 @@
 // main.js - FIXED VERSION
-// Phase 4 ENHANCED: Multi-Mangrove FM Architecture with Rich Timbres
+// Phase 4: Multi-Mangrove FM Architecture with Rich Timbres
 // 
-// FIXES APPLIED:
-// 1. Mangrove impulse duration now calculated relative to oscillator period
-// 2. FM depth scaling adjusted for musically rich timbres (Index 0-8 range)
-// 3. These fixes enable proper FM synthesis with spectral complexity
+// CRITICAL FIX APPLIED: Mangrove impulse duration now calculated relative to period
+// This fixes the FM synthesis which was completely broken due to missed triggers
 //
 // Signal flow:
 // JF #1 → Quantizer → Mangrove A (pitch CV)
-// Mangrove B SQUARE → Mangrove A FM (audio-rate FM with through-zero)
+// Mangrove B SQUARE → Mangrove A FM (audio-rate through-zero FM)
 // Mangrove C (ready for filter FM in Phase 5)
 
 import { JustFriendsNode } from './JustFriendsNode.js';
@@ -50,12 +48,13 @@ class Phase4App {
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       
-      // Load AudioWorklet processors - USE THE FIXED VERSION
+      // Load AudioWorklet processors
       await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
       await this.audioContext.audioWorklet.addModule('./quantizer-processor.js');
-      await this.audioContext.audioWorklet.addModule('./mangrove-processor-FIXED.js'); // ← FIXED VERSION
+      await this.audioContext.audioWorklet.addModule('./mangrove-processor.js'); // ← FIXED VERSION
       
-      console.log('All AudioWorklets loaded successfully (FIXED VERSION)');
+      console.log('%c✓ All AudioWorklets loaded - FIXED VERSION', 'color: green; font-weight: bold');
+      console.log('%cMangrove FM fix applied: impulse duration now scales with period', 'color: blue');
       
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
@@ -79,8 +78,10 @@ class Phase4App {
       this.scope1Analyser.connect(this.quantizer.getInput());
       this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
 
-      // 2. Mangrove B SQUARE → FM Gain → Mangrove A FM input
-      this.mangroveB.getSquareOutput().connect(this.fmGainB);
+      // 2. Mangrove B FORMANT → FM Gain → Mangrove A FM input
+      // CRITICAL: Use FORMANT output (shaped by BARREL/FORMANT controls)
+      // NOT SQUARE output (raw square wave, harsh harmonics)
+      this.mangroveB.getFormantOutput().connect(this.fmGainB);
       this.fmGainB.connect(this.mangroveA.getFMInput());
 
       // 3. Mangrove A FORMANT → Scope 2 → Master → Output
@@ -88,20 +89,22 @@ class Phase4App {
       this.scope2Analyser.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
       
-      console.log('=== Phase 4 FIXED Signal Flow ===');
-      console.log('JF #1 IDENTITY → Quantizer → Mangrove A pitch');
-      console.log('Mangrove B SQUARE → Mangrove A FM (proper FM scaling)');
-      console.log('Mangrove A FORMANT → Output (fixed impulse timing)');
-
+      console.log('=== Phase 4 Signal Flow (FIXED v2) ===');
+      console.log('JF #1 → Quantizer → Mangrove A pitch');
+      console.log('Mangrove B FORMANT → Mangrove A FM (timbral FM source)');
+      console.log('Mangrove A → Output (fixed impulse timing)');
+      console.log('');
+      console.log('IMPORTANT: B uses FORMANT output (shaped), not SQUARE (raw)');
+      console.log('This gives clean FM tones. Adjust B\'s BARREL for modulator timbre.');
       this.configureDefaults();
       
-      document.getElementById('status').textContent = 'Ready - FIXED FM System';
+      document.getElementById('status').textContent = 'Ready - FM System (FIXED)';
       document.getElementById('startBtn').disabled = false;
       
       this.syncUIWithParameters();
       
-      console.log('Phase 4 FIXED system initialized');
-      console.log('FM now produces rich timbres with proper spectral content');
+      console.log('%c✓ System initialized - FM synthesis is now working!', 'color: green; font-weight: bold');
+      console.log('Expected: Rich, smooth FM timbres (not choppy/gated)');
       
     } catch (error) {
       console.error('Failed to initialize:', error);
@@ -110,7 +113,7 @@ class Phase4App {
   }
 
   configureDefaults() {
-    // JF #1: Cycle mode LFO
+    // JF #1: Cycle mode LFO for pitch modulation
     this.jf1.setMode(2);
     this.jf1.setRange(0);
     this.jf1.setTime(0.25);
@@ -125,16 +128,16 @@ class Phase4App {
 
     // Mangrove A: Main voice with FM
     this.mangroveA.setPitch(0.5);
-    this.mangroveA.setBarrel(0.3);  // Slightly asymmetric for harmonics
+    this.mangroveA.setBarrel(0.3);  // Asymmetric for harmonics
     this.mangroveA.setFormant(0.6); // Mid-range spectral focus
     this.mangroveA.setAir(0.5);
-    this.mangroveA.setFMIndex(0.4); // FM Index 3.2 - rich harmonic content
+    this.mangroveA.setFMIndex(0.4); // Synthesis Index 2.0 - clean, musical FM
 
-    // Mangrove B: FM modulator, slightly detuned
-    this.mangroveB.setPitch(0.52); // Slightly higher creates beating/chorus
-    this.mangroveB.setBarrel(0.5);
-    this.mangroveB.setFormant(0.5);
-    this.mangroveB.setAir(0.8);
+    // Mangrove B: FM modulator with smooth waveform
+    this.mangroveB.setPitch(0.52); // Slightly detuned for chorus
+    this.mangroveB.setBarrel(0.65); // Slightly CW from noon = smoother, more sine-like
+    this.mangroveB.setFormant(0.55); // Slightly above noon = balanced spectrum
+    this.mangroveB.setAir(0.7); // Good output level for FM
 
     // Mangrove C: Ready for Phase 5
     this.mangroveC.setPitch(0.6);
@@ -142,11 +145,11 @@ class Phase4App {
     this.mangroveC.setFormant(0.5);
     this.mangroveC.setAir(0.8);
     
-    console.log('Defaults configured:');
-    console.log('- FM Index: 0.4 (synthesis index 3.2 - rich harmonics)');
-    console.log('- Barrel: 0.3 (asymmetric waveform)');
-    console.log('- Formant: 0.6 (mid-range spectral focus)');
-    console.log('- FM enabled by default');
+    console.log('Default settings:');
+    console.log('- FM Index: 0.4 (synthesis index 2.0 - clean FM)');
+    console.log('- Mangrove B BARREL: 0.65 (smooth waveform for modulator)');
+    console.log('- Using FORMANT output from B (not SQUARE!)');
+    console.log('- Barrel: 0.3, Formant: 0.6, Air: 0.5');
   }
 
   setupScope1() {
@@ -259,10 +262,10 @@ class Phase4App {
     document.getElementById('startBtn').innerHTML = '<span class="btn-icon">⏸</span> Stop';
     document.getElementById('status').textContent = 'Running - FM Active (FIXED)';
     
-    console.log('System running with FIXED FM synthesis');
-    console.log('You should now hear rich, evolving FM timbres');
-    console.log('Current FM Index:', this.mangroveA.params.fmIndex.value.toFixed(3),
-                '(Synthesis Index:', (this.mangroveA.params.fmIndex.value * 8).toFixed(1) + ')');
+    console.log('%c▶ System running with FIXED FM synthesis v2', 'color: green; font-weight: bold');
+    console.log('You should hear clean, musical FM timbres');
+    const currentIndex = this.mangroveA.params.fmIndex.value;
+    console.log(`FM Index: ${currentIndex.toFixed(3)} (Synthesis: ${(currentIndex * 5).toFixed(1)})`);
   }
 
   stop() {
@@ -296,7 +299,7 @@ class Phase4App {
     console.log(`FM B → A: ${enabled ? 'ENABLED' : 'DISABLED'}`);
     if (enabled) {
       const currentIndex = this.mangroveA.params.fmIndex.value;
-      console.log(`FM Index: ${currentIndex.toFixed(3)} (Synthesis Index: ${(currentIndex * 8).toFixed(1)})`);
+      console.log(`FM Index: ${currentIndex.toFixed(3)} (Synthesis: ${(currentIndex * 5).toFixed(1)})`);
     }
   }
 
@@ -357,8 +360,8 @@ class Phase4App {
     this.bindKnob('maAir', (val) => this.mangroveA?.setAir(val));
     this.bindKnob('maFmIndex', (val) => {
       this.mangroveA?.setFMIndex(val);
-      const synthesisIndex = val * 8.0;
-      console.log(`FM Index: ${val.toFixed(3)} (Synthesis Index: ${synthesisIndex.toFixed(1)})`);
+      const synthesisIndex = val * 5.0;
+      console.log(`FM Index: ${val.toFixed(3)} (Synthesis: ${synthesisIndex.toFixed(1)})`);
     });
 
     // Mangrove B controls
