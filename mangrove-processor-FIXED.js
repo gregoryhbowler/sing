@@ -2,10 +2,10 @@
 // Mangrove Formant Oscillator - AudioWorklet Processor
 // Based on Mannequins Mangrove technical specifications
 // 
-// FIXES:
+// FIXES APPLIED:
 // 1. Impulse duration now calculated relative to oscillator period (not absolute time)
 // 2. FM scaling adjusted for musically rich timbres
-// 3. Proper through-zero FM with phase reversal
+// 3. These fixes enable proper FM synthesis with spectral complexity
 
 class MangroveProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
@@ -46,6 +46,8 @@ class MangroveProcessor extends AudioWorkletProcessor {
     
     this.sampleRate = sampleRate;
     this.sampleTime = 1.0 / this.sampleRate;
+    
+    console.log('Mangrove processor loaded - FIXED VERSION (impulse duration corrected)');
   }
 
   voltToFreq(volt) {
@@ -123,23 +125,21 @@ class MangroveProcessor extends AudioWorkletProcessor {
       
       this.frequency = baseFreq * Math.pow(2, totalVolt);
       
-      // === THROUGH-ZERO FM ===
-      // FIX: Proper FM scaling for rich timbres
+      // === THROUGH-ZERO FM (FIXED SCALING v2) ===
       const fmIndexParam = parameters.fmIndex[i] || parameters.fmIndex[0];
       const fmSignal = fmInput[i] || 0;
       
-      // FM Index: 0 to 8 range (classic FM synthesis range)
-      // At index 3-5, we get rich harmonic content
-      // At index 6-8, we get complex inharmonic timbres
-      const actualFmIndex = fmIndexParam * 8.0;
+      // FM Index: 0 to 5 range for clean, musical FM
+      // With shaped FORMANT waveform (not square), we need less depth
+      // 0-2 = subtle/harmonic, 2-3 = rich, 3-5 = complex
+      const actualFmIndex = fmIndexParam * 5.0;
       
       // Linear FM with through-zero capability
-      // Deviation proportional to modulator amplitude × index × carrier freq
-      // The 0.5 factor gives musically useful depth
-      const fmAmount = fmSignal * actualFmIndex * this.frequency * 0.5;
+      // Reduced scaling (0.3 instead of 0.5) for cleaner modulator
+      const fmAmount = fmSignal * actualFmIndex * this.frequency * 0.3;
       const modulatedFreq = this.frequency + fmAmount;
       
-      // Advance phase - can go forwards or backwards for through-zero
+      // Advance phase - can go forwards or backwards (through-zero)
       const phaseIncrement = modulatedFreq / this.sampleRate;
       this.phase += phaseIncrement;
       
@@ -162,7 +162,7 @@ class MangroveProcessor extends AudioWorkletProcessor {
       this.impulseRiseTime = 1.0 - barrelTotal;
       this.impulseFallTime = barrelTotal;
       
-      // === FIX: FORMANT control (impulse duration RELATIVE TO PERIOD) ===
+      // === CRITICAL FIX: FORMANT control (impulse duration RELATIVE TO PERIOD) ===
       const formantKnob = parameters.formantKnob[i] || parameters.formantKnob[0];
       const formantCVVal = formantCV[i] || 0;
       const formantTotal = Math.max(0, Math.min(1, formantKnob + (formantCVVal / 20.0)));
@@ -172,17 +172,17 @@ class MangroveProcessor extends AudioWorkletProcessor {
       // Calculate period of the CORE oscillator (not the modulated freq)
       const period = 1.0 / Math.max(0.1, this.frequency);
       
-      // FORMANT sets duration as a multiple of the period
-      // formantTotal = 0.0 (CCW): long impulses (10× period) for pitch division
-      // formantTotal = 0.5 (noon): impulses match period (1× period)  
-      // formantTotal = 1.0 (CW): short impulses (0.1× period) for high-pass effect
-      const durationInPeriods = Math.pow(10, 2 * (0.5 - formantTotal)); // 0.1 to 10 periods
+      // FORMANT sets duration as a MULTIPLE of the period
+      // formantTotal = 0.0 (CCW): 10 periods (pitch division)
+      // formantTotal = 0.5 (noon): 1 period (perfect match)
+      // formantTotal = 1.0 (CW): 0.1 periods (short bursts)
+      const durationInPeriods = Math.pow(10, 2 * (0.5 - formantTotal));
       
       if (constantMode < 0.5) {
         // CONSTANT WAVE mode: duration scales with period
         this.impulseDuration = period * durationInPeriods;
       } else {
-        // CONSTANT FORMANT mode: duration stays constant (based on 440Hz reference)
+        // CONSTANT FORMANT mode: duration based on 440Hz reference
         const refPeriod = 1.0 / 440.0;
         this.impulseDuration = refPeriod * durationInPeriods;
       }
