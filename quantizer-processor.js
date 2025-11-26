@@ -6,11 +6,11 @@
 class QuantizerProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [
-      // Depth: controls pitch range in octaves (0 = single note, 1 = 1 octave range)
-      { name: 'depth', defaultValue: 1.0, minValue: 0, maxValue: 1 },
+      // Depth: controls pitch range in octaves (0 = single note, 8 = 8 octaves range)
+      { name: 'depth', defaultValue: 1.0, minValue: 0, maxValue: 8.0 },
       
-      // Offset: shifts CV after quantization (-2V to +2V for transposition)
-      { name: 'offset', defaultValue: 0.0, minValue: -2.0, maxValue: 2.0 }
+      // Offset: shifts CV after quantization (-4V to +4V for transposition)
+      { name: 'offset', defaultValue: 0.0, minValue: -4.0, maxValue: 4.0 }
     ];
   }
 
@@ -131,8 +131,11 @@ class QuantizerProcessor extends AudioWorkletProcessor {
       const normalized = Math.max(0, Math.min(1.6, cvValue)) / 1.6;
       
       // Apply depth to map to voltage range
+      // depth is now in octaves (0-8 range)
       // depth = 0 → 0V (single note)
-      // depth = 1.0 → 1V (full octave)
+      // depth = 1.0 → 1V (1 octave = 12 semitones)
+      // depth = 2.5 → 2.5V (2.5 octaves = 30 semitones)
+      // depth = 8.0 → 8V (8 octaves = 96 semitones)
       const volts = normalized * depth;
       
       // Quantize to nearest allowed note
