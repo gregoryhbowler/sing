@@ -230,6 +230,123 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Scope visualization */
+.scope-panel canvas {
+  width: 100%;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-md);
+  display: block;
+}
+
+.scope-info {
+  margin-top: var(--space-sm);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* Scale preset buttons */
+.scale-presets {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-md);
+}
+
+.preset-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.preset-btn.active {
+  background: var(--text-primary);
+  color: white;
+  border-color: var(--text-primary);
+}
+
+/* Piano keyboard */
+.keyboard-panel {
+  grid-column: 1 / -1;
+}
+
+.piano-keyboard {
+  display: flex;
+  gap: 4px;
+  padding: var(--space-md) 0;
+  justify-content: center;
+}
+
+.piano-key {
+  width: 60px;
+  height: 120px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.white-key {
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid var(--border-medium);
+}
+
+.black-key {
+  background: rgba(50, 50, 50, 0.6);
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  height: 80px;
+  margin: 0 -8px;
+  z-index: 1;
+}
+
+.piano-key.active {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(107, 91, 149, 0.3);
+}
+
+.white-key.active {
+  background: rgba(200, 220, 255, 0.8);
+  border-color: #6b5b95;
+}
+
+.black-key.active {
+  background: rgba(107, 91, 149, 0.8);
+  border-color: #6b5b95;
+}
+
+.piano-key:hover {
+  transform: translateY(-2px);
+}
+
+.keyboard-labels {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: var(--space-sm);
+}
+
+.keyboard-labels span {
+  width: 60px;
+  text-align: center;
+}
+
 /* Action Button */
 .action-btn {
   width: 100%;
