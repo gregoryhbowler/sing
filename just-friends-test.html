@@ -3,218 +3,673 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Just Friends Oscillator Test</title>
+  <title>Just Friends - Complete Module Emulation</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600&display=swap');
+    
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
+    
+    :root {
+      --bg-dark: #0a0a0b;
+      --bg-panel: #141416;
+      --bg-control: #1c1c20;
+      --border: #2a2a30;
+      --text: #e8e8ec;
+      --text-dim: #888890;
+      --accent: #f0c040;
+      --accent-dim: #a08020;
+      --trigger: #40f080;
+      --gate: #4080f0;
+      --run: #f04080;
+    }
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a1a;
-      color: #e0e0e0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
       padding: 20px;
-      max-width: 900px;
+    }
+    
+    .container {
+      max-width: 1200px;
       margin: 0 auto;
     }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    
     h1 {
-      color: #f0f0f0;
-      border-bottom: 1px solid #333;
-      padding-bottom: 10px;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
     }
-    h2 {
-      color: #888;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 30px;
-    }
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin: 20px 0;
-    }
-    .control-group {
-      background: #252525;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
+    
+    .status-bar {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
-      color: #aaa;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      background: var(--bg-control);
+      padding: 8px 12px;
+      border-radius: 4px;
     }
-    input[type="range"] {
-      width: 100%;
-      margin: 5px 0;
-      accent-color: #4a9eff;
+    
+    .main-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
     }
-    .value-display {
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 14px;
-      color: #4a9eff;
-    }
+    
     button {
-      background: #4a9eff;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg-control);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
       border-radius: 6px;
       cursor: pointer;
-      margin: 5px;
+      font-size: 14px;
+      transition: all 0.15s;
     }
+    
     button:hover {
-      background: #3a8eef;
+      background: var(--border);
     }
+    
+    button.primary {
+      background: var(--accent);
+      color: var(--bg-dark);
+      border-color: var(--accent);
+    }
+    
+    button.primary:hover {
+      background: var(--accent-dim);
+    }
+    
     button:disabled {
-      background: #555;
+      opacity: 0.5;
       cursor: not-allowed;
     }
-    button.active {
-      background: #2ecc71;
+    
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
     }
-    .preset-buttons {
+    
+    .panel-header {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 10px 0;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
     }
-    .preset-buttons button {
-      padding: 8px 16px;
-      font-size: 12px;
-      background: #333;
+    
+    .panel-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
     }
-    .preset-buttons button:hover {
-      background: #444;
+    
+    .mode-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: var(--accent);
+      color: var(--bg-dark);
+      padding: 4px 8px;
+      border-radius: 3px;
     }
-    .output-select {
-      margin: 20px 0;
+    
+    .mode-badge.run {
+      background: var(--run);
     }
-    select {
-      background: #333;
-      color: #e0e0e0;
-      border: 1px solid #444;
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 4px;
-      width: 200px;
-    }
-    .status {
-      padding: 10px;
-      background: #252525;
-      border-radius: 4px;
-      margin: 10px 0;
-      font-family: monospace;
-      font-size: 12px;
-    }
+    
+    /* Scope */
     .scope-container {
       background: #000;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 10px;
-      margin: 20px 0;
+      border-radius: 4px;
+      overflow: hidden;
     }
+    
     canvas {
-      width: 100%;
-      height: 150px;
       display: block;
+      width: 100%;
+      height: 120px;
+    }
+    
+    /* Mode Selection */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .mode-btn {
+      background: var(--bg-control);
+      border: none;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .mode-btn:hover {
+      background: var(--border);
+    }
+    
+    .mode-btn.active {
+      background: var(--accent);
+      color: var(--bg-dark);
+    }
+    
+    .mode-btn .mode-name {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .mode-btn .run-name {
+      display: block;
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    
+    .mode-btn.active .run-name {
+      color: var(--bg-dark);
+      opacity: 0.7;
+    }
+    
+    .range-toggle {
+      display: flex;
+      gap: 2px;
+      background: var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    
+    .range-btn {
+      flex: 1;
+      background: var(--bg-control);
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .range-btn:hover {
+      background: var(--border);
+    }
+    
+    .range-btn.active {
+      background: var(--accent);
+      color: var(--bg-dark);
+    }
+    
+    /* RUN Mode Toggle */
+    .run-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .run-toggle label {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--bg-control);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .toggle-switch.active {
+      background: var(--run);
+    }
+    
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: var(--text);
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+    
+    /* Knobs */
+    .knobs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 20px;
+    }
+    
+    .knob-container {
+      text-align: center;
+    }
+    
+    .knob-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    
+    .knob-wrapper {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+    }
+    
+    .knob {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #2a2a30, #1a1a1e);
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      cursor: grab;
+      position: relative;
+    }
+    
+    .knob::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      height: 20px;
+      background: var(--accent);
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 2px;
+    }
+    
+    .knob-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 8px;
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--bg-control);
+      border-radius: 3px;
+      margin: 10px 0;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    /* Trigger Buttons */
+    .triggers-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+    
+    .trigger-col {
+      text-align: center;
+    }
+    
+    .trigger-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    
+    .trigger-btn {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--bg-control);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    
+    .trigger-btn:hover {
+      border-color: var(--trigger);
+    }
+    
+    .trigger-btn:active,
+    .trigger-btn.active {
+      background: var(--trigger);
+      border-color: var(--trigger);
+      color: var(--bg-dark);
+    }
+    
+    .trigger-btn.gate-mode:active,
+    .trigger-btn.gate-mode.active {
+      background: var(--gate);
+      border-color: var(--gate);
+    }
+    
+    .output-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--bg-control);
+      border-radius: 50%;
+      margin: 8px auto;
+      transition: all 0.05s;
+    }
+    
+    .output-indicator.active {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+    
+    /* Output Selection */
+    .output-select {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    
+    .output-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      background: var(--bg-control);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .output-btn:hover {
+      border-color: var(--accent);
+    }
+    
+    .output-btn.active {
+      background: var(--accent);
+      color: var(--bg-dark);
+      border-color: var(--accent);
+    }
+    
+    /* Presets */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 8px;
+    }
+    
+    .preset-btn {
+      padding: 8px;
+      font-size: 11px;
+      background: var(--bg-control);
+      border: 1px solid var(--border);
+    }
+    
+    /* Layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Info text */
+    .info-text {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+    
+    .info-text strong {
+      color: var(--accent);
     }
   </style>
 </head>
 <body>
-  <h1>Just Friends Oscillator Test</h1>
-  
-  <div>
-    <button id="startBtn">▶ Start Audio</button>
-    <button id="stopBtn" disabled>■ Stop</button>
-  </div>
-  
-  <div class="status" id="status">Audio not started. Click "Start Audio" to begin.</div>
-  
-  <h2>Waveform</h2>
-  <div class="scope-container">
-    <canvas id="scope"></canvas>
-  </div>
-  
-  <h2>Output Select</h2>
-  <div class="output-select">
-    <select id="outputSelect">
-      <option value="6">MIX (all oscillators)</option>
-      <option value="0">IDENTITY (1N)</option>
-      <option value="1">2N</option>
-      <option value="2">3N</option>
-      <option value="3">4N</option>
-      <option value="4">5N</option>
-      <option value="5">6N</option>
-    </select>
-  </div>
-  
-  <h2>Controls</h2>
-  <div class="controls">
-    <div class="control-group">
-      <label>TIME (Pitch)</label>
-      <input type="range" id="time" min="0" max="1" step="0.01" value="0.5">
-      <span class="value-display" id="timeVal">0.50</span>
+  <div class="container">
+    <header>
+      <h1>Just Friends</h1>
+      <div class="status-bar" id="status">Click Start to begin</div>
+    </header>
+    
+    <div class="main-controls">
+      <button class="primary" id="startBtn">▶ Start Audio</button>
+      <button id="stopBtn" disabled>■ Stop</button>
     </div>
     
-    <div class="control-group">
-      <label>INTONE (Harmonic Spread)</label>
-      <input type="range" id="intone" min="0" max="1" step="0.01" value="0.5">
-      <span class="value-display" id="intoneVal">0.50</span>
-      <div class="preset-buttons">
-        <button onclick="setIntone(0)">Undertones</button>
-        <button onclick="setIntone(0.5)">Unison</button>
-        <button onclick="setIntone(1)">Overtones</button>
+    <!-- Scope -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Waveform</span>
+        <span class="mode-badge" id="modeBadge">CYCLE/SOUND</span>
+      </div>
+      <div class="scope-container">
+        <canvas id="scope"></canvas>
+      </div>
+      <div style="margin-top: 15px;">
+        <div class="panel-title" style="margin-bottom: 8px;">Monitor Output</div>
+        <div class="output-select" id="outputSelect">
+          <button class="output-btn active" data-output="6">MIX</button>
+          <button class="output-btn" data-output="0">1N</button>
+          <button class="output-btn" data-output="1">2N</button>
+          <button class="output-btn" data-output="2">3N</button>
+          <button class="output-btn" data-output="3">4N</button>
+          <button class="output-btn" data-output="4">5N</button>
+          <button class="output-btn" data-output="5">6N</button>
+        </div>
       </div>
     </div>
     
-    <div class="control-group">
-      <label>RAMP (Rise/Fall)</label>
-      <input type="range" id="ramp" min="0" max="1" step="0.01" value="0.5">
-      <span class="value-display" id="rampVal">0.50</span>
-      <div class="preset-buttons">
-        <button onclick="setRamp(0)">Saw ↓</button>
-        <button onclick="setRamp(0.5)">Triangle</button>
-        <button onclick="setRamp(1)">Ramp ↑</button>
+    <div class="grid-2">
+      <!-- Mode Selection -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Mode</span>
+        </div>
+        <div class="mode-grid" id="modeGrid">
+          <button class="mode-btn" data-mode="0">
+            <span class="mode-name">TRANSIENT</span>
+            <span class="run-name">SHIFT / SPILL</span>
+          </button>
+          <button class="mode-btn" data-mode="1">
+            <span class="mode-name">SUSTAIN</span>
+            <span class="run-name">STRATA / PLUME</span>
+          </button>
+          <button class="mode-btn active" data-mode="2">
+            <span class="mode-name">CYCLE</span>
+            <span class="run-name">VOLLEY / FLOOM</span>
+          </button>
+        </div>
+        <div class="range-toggle" id="rangeToggle">
+          <button class="range-btn" data-range="0">SHAPE (LFO/ENV)</button>
+          <button class="range-btn active" data-range="1">SOUND (VCO)</button>
+        </div>
+        <div class="run-toggle">
+          <label>RUN Mode</label>
+          <div class="toggle-switch" id="runToggle"></div>
+          <span id="runModeName" style="font-size: 12px; color: var(--run);">FLOOM</span>
+        </div>
+        <p class="info-text" id="modeInfo">
+          <strong>CYCLE/SOUND:</strong> Free-running waveshaped VCOs. 
+          TIME controls pitch, INTONE spreads harmonics.
+        </p>
+      </div>
+      
+      <!-- Triggers -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Triggers / Gates</span>
+          <select id="triggerMode" style="background: var(--bg-control); color: var(--text); border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+            <option value="trigger">Trigger (click)</option>
+            <option value="gate">Gate (hold)</option>
+          </select>
+        </div>
+        <div class="triggers-grid">
+          <div class="trigger-col">
+            <div class="trigger-label">1N</div>
+            <button class="trigger-btn" data-index="0">TRIG</button>
+            <div class="output-indicator" data-ind="0"></div>
+          </div>
+          <div class="trigger-col">
+            <div class="trigger-label">2N</div>
+            <button class="trigger-btn" data-index="1">TRIG</button>
+            <div class="output-indicator" data-ind="1"></div>
+          </div>
+          <div class="trigger-col">
+            <div class="trigger-label">3N</div>
+            <button class="trigger-btn" data-index="2">TRIG</button>
+            <div class="output-indicator" data-ind="2"></div>
+          </div>
+          <div class="trigger-col">
+            <div class="trigger-label">4N</div>
+            <button class="trigger-btn" data-index="3">TRIG</button>
+            <div class="output-indicator" data-ind="3"></div>
+          </div>
+          <div class="trigger-col">
+            <div class="trigger-label">5N</div>
+            <button class="trigger-btn" data-index="4">TRIG</button>
+            <div class="output-indicator" data-ind="4"></div>
+          </div>
+          <div class="trigger-col">
+            <div class="trigger-label">6N</div>
+            <button class="trigger-btn" data-index="5">TRIG</button>
+            <div class="output-indicator" data-ind="5"></div>
+          </div>
+        </div>
+        <p class="info-text" style="margin-top: 15px;">
+          Triggers are normalled: 6N cascades to all. In SUSTAIN mode, use Gate mode for ASR envelopes.
+        </p>
       </div>
     </div>
     
-    <div class="control-group">
-      <label>CURVE (Waveshape)</label>
-      <input type="range" id="curve" min="0" max="1" step="0.01" value="0.5">
-      <span class="value-display" id="curveVal">0.50</span>
-      <div class="preset-buttons">
-        <button onclick="setCurve(0)">Square</button>
-        <button onclick="setCurve(0.5)">Linear</button>
-        <button onclick="setCurve(1)">Sine</button>
+    <!-- Main Knobs -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Parameters</span>
+      </div>
+      <div class="knobs-grid">
+        <div class="knob-container">
+          <div class="knob-label">TIME</div>
+          <input type="range" id="time" min="0" max="1" step="0.001" value="0.5">
+          <div class="knob-value" id="timeVal">0.500</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-label">INTONE</div>
+          <input type="range" id="intone" min="0" max="1" step="0.001" value="0.5">
+          <div class="knob-value" id="intoneVal">0.500</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-label">RAMP</div>
+          <input type="range" id="ramp" min="0" max="1" step="0.001" value="0.5">
+          <div class="knob-value" id="rampVal">0.500</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-label">CURVE</div>
+          <input type="range" id="curve" min="0" max="1" step="0.001" value="0.5">
+          <div class="knob-value" id="curveVal">0.500</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-label">FM INDEX</div>
+          <input type="range" id="fmIndex" min="-1" max="1" step="0.001" value="0">
+          <div class="knob-value" id="fmIndexVal">0.000</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-label">RUN</div>
+          <input type="range" id="run" min="-1" max="1" step="0.001" value="0">
+          <div class="knob-value" id="runVal">0.000</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-label">VOLUME</div>
+          <input type="range" id="volume" min="0" max="1" step="0.001" value="0.2">
+          <div class="knob-value" id="volumeVal">0.200</div>
+        </div>
       </div>
     </div>
     
-    <div class="control-group">
-      <label>FM Index</label>
-      <input type="range" id="fmIndex" min="0" max="1" step="0.01" value="0">
-      <span class="value-display" id="fmIndexVal">0.00</span>
+    <!-- Presets -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Presets</span>
+      </div>
+      <div class="grid-3">
+        <div>
+          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;">WAVESHAPE</div>
+          <div class="presets-grid">
+            <button class="preset-btn" onclick="presetSine()">Sine</button>
+            <button class="preset-btn" onclick="presetTriangle()">Triangle</button>
+            <button class="preset-btn" onclick="presetSaw()">Saw</button>
+            <button class="preset-btn" onclick="presetSquare()">Square</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;">INTONE</div>
+          <div class="presets-grid">
+            <button class="preset-btn" onclick="setParam('intone', 0)">Undertones</button>
+            <button class="preset-btn" onclick="setParam('intone', 0.5)">Unison</button>
+            <button class="preset-btn" onclick="setParam('intone', 1)">Overtones</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;">PATCHES</div>
+          <div class="presets-grid">
+            <button class="preset-btn" onclick="presetFMBass()">FM Bass</button>
+            <button class="preset-btn" onclick="presetChord()">Chord</button>
+            <button class="preset-btn" onclick="presetNoise()">Noise</button>
+            <button class="preset-btn" onclick="presetPlucks()">Plucks</button>
+          </div>
+        </div>
+      </div>
     </div>
-    
-    <div class="control-group">
-      <label>Master Volume</label>
-      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.2">
-      <span class="value-display" id="volumeVal">0.20</span>
-    </div>
-  </div>
-  
-  <h2>Wave Presets</h2>
-  <div class="preset-buttons">
-    <button onclick="presetSine()">Sine</button>
-    <button onclick="presetTriangle()">Triangle</button>
-    <button onclick="presetSaw()">Saw</button>
-    <button onclick="presetSquare()">Square</button>
-    <button onclick="presetOvertones()">Harmonic Stack</button>
-    <button onclick="presetChord()">Major Chord</button>
   </div>
 
   <script type="module">
@@ -224,148 +679,111 @@
     let jf = null;
     let masterGain = null;
     let analyser = null;
-    let currentOutput = 6; // MIX by default
-    let fmOsc = null;
-    let fmGain = null;
     let animationId = null;
+    let currentOutput = 6;
+    let currentMode = 2;
+    let currentRange = 1;
+    let runEnabled = false;
+    let triggerMode = 'trigger';
     
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const status = document.getElementById('status');
     const canvas = document.getElementById('scope');
     const canvasCtx = canvas.getContext('2d');
     
-    // Expose functions to window for button onclick handlers
-    window.setIntone = (val) => {
-      if (jf) {
-        jf.params.intone.value = val;
-        document.getElementById('intone').value = val;
-        document.getElementById('intoneVal').textContent = val.toFixed(2);
+    // Mode descriptions
+    const modeInfo = {
+      '0/0': '<strong>TRANSIENT/SHAPE:</strong> AR envelope generators. Triggers start attack phase, ignored while active.',
+      '1/0': '<strong>SUSTAIN/SHAPE:</strong> ASR envelope generators. Gate-sensitive with "vactrol memory" effect.',
+      '2/0': '<strong>CYCLE/SHAPE:</strong> LFOs with controllable phase relationships. Triggers reset phase.',
+      '0/1': '<strong>TRANSIENT/SOUND:</strong> Impulse-train VCOs. Pitch from trigger rate, TIME/INTONE control formant.',
+      '1/1': '<strong>SUSTAIN/SOUND:</strong> Trapezoid VCOs. Tracks PWM of input gate.',
+      '2/1': '<strong>CYCLE/SOUND:</strong> Free-running waveshaped VCOs. TIME controls pitch, INTONE spreads harmonics.',
+      '0/0/run': '<strong>SHIFT:</strong> AR envelopes with retrigger control. RUN sets retrigger point.',
+      '1/0/run': '<strong>STRATA:</strong> ARSR envelopes. RUN controls sustain level. Can be used as slew limiter.',
+      '2/0/run': '<strong>VOLLEY:</strong> Modulation burst generator. RUN controls burst count (1-36 cycles).',
+      '0/1/run': '<strong>SPILL:</strong> Self-clocked impulse trains with sync chaos. IDENTITY clocks others.',
+      '1/1/run': '<strong>PLUME:</strong> LPG-processed VCOs. Pluck/hold gates, major/minor chords via INTONE.',
+      '2/1/run': '<strong>FLOOM:</strong> 2-operator FM synthesis. RUN controls mod:carrier ratio. Can generate noise.'
+    };
+    
+    const runModeNames = {
+      '0/0': 'SHIFT',
+      '1/0': 'STRATA', 
+      '2/0': 'VOLLEY',
+      '0/1': 'SPILL',
+      '1/1': 'PLUME',
+      '2/1': 'FLOOM'
+    };
+    
+    function updateModeDisplay() {
+      const rangeNames = ['SHAPE', 'SOUND'];
+      const modeNames = ['TRANSIENT', 'SUSTAIN', 'CYCLE'];
+      let badge = `${modeNames[currentMode]}/${rangeNames[currentRange]}`;
+      
+      const runName = runModeNames[`${currentMode}/${currentRange}`];
+      document.getElementById('runModeName').textContent = runName;
+      
+      if (runEnabled) {
+        badge = runName;
+        document.getElementById('modeBadge').classList.add('run');
+      } else {
+        document.getElementById('modeBadge').classList.remove('run');
       }
-    };
-    
-    window.setRamp = (val) => {
-      if (jf) {
-        jf.params.ramp.value = val;
-        document.getElementById('ramp').value = val;
-        document.getElementById('rampVal').textContent = val.toFixed(2);
-      }
-    };
-    
-    window.setCurve = (val) => {
-      if (jf) {
-        jf.params.curve.value = val;
-        document.getElementById('curve').value = val;
-        document.getElementById('curveVal').textContent = val.toFixed(2);
-      }
-    };
-    
-    window.presetSine = () => {
-      window.setCurve(1);
-      window.setRamp(0.5);
-      window.setIntone(0.5);
-    };
-    
-    window.presetTriangle = () => {
-      window.setCurve(0.5);
-      window.setRamp(0.5);
-      window.setIntone(0.5);
-    };
-    
-    window.presetSaw = () => {
-      window.setCurve(0.5);
-      window.setRamp(0);
-      window.setIntone(0.5);
-    };
-    
-    window.presetSquare = () => {
-      window.setCurve(0);
-      window.setRamp(0.5);
-      window.setIntone(0.5);
-    };
-    
-    window.presetOvertones = () => {
-      window.setCurve(1);
-      window.setRamp(0.5);
-      window.setIntone(1);
-    };
-    
-    window.presetChord = () => {
-      // Major chord voicing using overtones
-      window.setCurve(1);
-      window.setRamp(0.5);
-      window.setIntone(1);
-      // Select MIX output
-      document.getElementById('outputSelect').value = '6';
-      selectOutput(6);
-    };
+      
+      document.getElementById('modeBadge').textContent = badge;
+      
+      const infoKey = runEnabled ? `${currentMode}/${currentRange}/run` : `${currentMode}/${currentRange}`;
+      document.getElementById('modeInfo').innerHTML = modeInfo[infoKey] || '';
+    }
     
     function selectOutput(index) {
-      if (!jf || !masterGain) return;
+      if (!jf || !analyser) return;
       
-      // Disconnect current
+      // Disconnect all
       for (let i = 0; i <= 6; i++) {
-        try {
-          jf.getOutput(i).disconnect(analyser);
-        } catch (e) {}
+        try { jf.getOutput(i).disconnect(analyser); } catch(e) {}
       }
       
-      // Connect new
-      currentOutput = index;
       jf.getOutput(index).connect(analyser);
+      currentOutput = index;
+      
+      document.querySelectorAll('.output-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.output) === index);
+      });
     }
     
     async function startAudio() {
       try {
         ctx = new AudioContext();
-        status.textContent = 'Loading processor module...';
+        document.getElementById('status').textContent = 'Loading...';
         
         await ctx.audioWorklet.addModule('./just-friends-osc-processor.js');
-        status.textContent = 'Creating Just Friends node...';
         
         jf = new JustFriendsOscNode(ctx);
         jf.setCycleSoundMode();
         
-        // Create master gain
         masterGain = ctx.createGain();
         masterGain.gain.value = parseFloat(document.getElementById('volume').value);
         
-        // Create analyser for visualization
         analyser = ctx.createAnalyser();
         analyser.fftSize = 2048;
         
-        // Connect: JF output -> analyser -> master gain -> destination
         jf.getOutput(currentOutput).connect(analyser);
         analyser.connect(masterGain);
         masterGain.connect(ctx.destination);
         
-        // Create FM oscillator
-        fmOsc = ctx.createOscillator();
-        fmOsc.frequency.value = 2;
-        fmGain = ctx.createGain();
-        fmGain.gain.value = 0;
-        fmOsc.connect(fmGain);
-        fmGain.connect(jf.getFMInput());
-        fmOsc.start();
-        
-        // Apply initial parameter values
-        jf.params.time.value = parseFloat(document.getElementById('time').value);
-        jf.params.intone.value = parseFloat(document.getElementById('intone').value);
-        jf.params.ramp.value = parseFloat(document.getElementById('ramp').value);
-        jf.params.curve.value = parseFloat(document.getElementById('curve').value);
-        jf.params.fmIndex.value = parseFloat(document.getElementById('fmIndex').value);
+        // Apply initial values
+        applyAllParams();
         
         await ctx.resume();
         
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        status.textContent = `Audio running at ${ctx.sampleRate}Hz. Adjust controls to explore!`;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('status').textContent = `Running @ ${ctx.sampleRate}Hz`;
         
-        // Start visualization
         drawScope();
         
       } catch (err) {
-        status.textContent = `Error: ${err.message}`;
+        document.getElementById('status').textContent = `Error: ${err.message}`;
         console.error(err);
       }
     }
@@ -375,22 +793,31 @@
         ctx.close();
         ctx = null;
         jf = null;
-        masterGain = null;
-        analyser = null;
-        fmOsc = null;
-        fmGain = null;
       }
       if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
       }
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      status.textContent = 'Audio stopped.';
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('status').textContent = 'Stopped';
       
-      // Clear canvas
       canvasCtx.fillStyle = '#000';
       canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    function applyAllParams() {
+      if (!jf) return;
+      
+      jf.params.time.value = parseFloat(document.getElementById('time').value);
+      jf.params.intone.value = parseFloat(document.getElementById('intone').value);
+      jf.params.ramp.value = parseFloat(document.getElementById('ramp').value);
+      jf.params.curve.value = parseFloat(document.getElementById('curve').value);
+      jf.params.fmIndex.value = parseFloat(document.getElementById('fmIndex').value);
+      jf.params.run.value = parseFloat(document.getElementById('run').value);
+      jf.params.range.value = currentRange;
+      jf.params.mode.value = currentMode;
+      jf.params.runEnabled.value = runEnabled ? 1 : 0;
     }
     
     function drawScope() {
@@ -402,29 +829,39 @@
       const dataArray = new Float32Array(bufferLength);
       analyser.getFloatTimeDomainData(dataArray);
       
-      // Set canvas size to match display size
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      canvasCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       
       const width = rect.width;
       const height = rect.height;
       
+      canvasCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      
       canvasCtx.fillStyle = '#000';
       canvasCtx.fillRect(0, 0, width, height);
       
-      // Draw center line
-      canvasCtx.strokeStyle = '#333';
+      // Grid lines
+      canvasCtx.strokeStyle = '#1a1a1a';
       canvasCtx.lineWidth = 1;
+      for (let y = 0; y <= 4; y++) {
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(0, y * height / 4);
+        canvasCtx.lineTo(width, y * height / 4);
+        canvasCtx.stroke();
+      }
+      
+      // Center line
+      canvasCtx.strokeStyle = '#333';
       canvasCtx.beginPath();
       canvasCtx.moveTo(0, height / 2);
       canvasCtx.lineTo(width, height / 2);
       canvasCtx.stroke();
       
-      // Draw waveform
-      canvasCtx.strokeStyle = '#4a9eff';
-      canvasCtx.lineWidth = 2;
+      // Waveform
+      canvasCtx.strokeStyle = '#f0c040';
+      canvasCtx.lineWidth = 1.5;
       canvasCtx.beginPath();
       
       const sliceWidth = width / bufferLength;
@@ -444,53 +881,255 @@
       
       canvasCtx.stroke();
       
-      // Reset scale for next frame
-      canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
+      // Update output indicators based on amplitude
+      const rms = Math.sqrt(dataArray.reduce((sum, v) => sum + v * v, 0) / bufferLength);
+      document.querySelectorAll('.output-indicator').forEach(ind => {
+        const idx = parseInt(ind.dataset.ind);
+        ind.classList.toggle('active', idx === currentOutput && rms > 0.01);
+      });
     }
     
-    // Event listeners
-    startBtn.addEventListener('click', startAudio);
-    stopBtn.addEventListener('click', stopAudio);
+    // Expose functions to window
+    window.setParam = (name, value) => {
+      if (!jf) return;
+      jf.params[name].value = value;
+      document.getElementById(name).value = value;
+      document.getElementById(name + 'Val').textContent = value.toFixed(3);
+    };
     
-    document.getElementById('outputSelect').addEventListener('change', (e) => {
-      selectOutput(parseInt(e.target.value));
+    window.presetSine = () => {
+      setParam('curve', 1);
+      setParam('ramp', 0.5);
+    };
+    
+    window.presetTriangle = () => {
+      setParam('curve', 0.5);
+      setParam('ramp', 0.5);
+    };
+    
+    window.presetSaw = () => {
+      setParam('curve', 0.5);
+      setParam('ramp', 0);
+    };
+    
+    window.presetSquare = () => {
+      setParam('curve', 0);
+      setParam('ramp', 0.5);
+    };
+    
+    window.presetFMBass = () => {
+      if (!jf) return;
+      
+      // Enable FLOOM
+      currentMode = 2;
+      currentRange = 1;
+      runEnabled = true;
+      
+      document.querySelectorAll('#modeGrid .mode-btn').forEach(b => 
+        b.classList.toggle('active', parseInt(b.dataset.mode) === currentMode));
+      document.querySelectorAll('#rangeToggle .range-btn').forEach(b =>
+        b.classList.toggle('active', parseInt(b.dataset.range) === currentRange));
+      document.getElementById('runToggle').classList.add('active');
+      
+      applyAllParams();
+      updateModeDisplay();
+      
+      setParam('time', 0.3);
+      setParam('intone', 0.5);
+      setParam('curve', 1);
+      setParam('ramp', 0.5);
+      setParam('fmIndex', 0.5);
+      setParam('run', 0);
+      
+      selectOutput(6);
+    };
+    
+    window.presetChord = () => {
+      if (!jf) return;
+      
+      currentMode = 2;
+      currentRange = 1;
+      runEnabled = false;
+      
+      document.querySelectorAll('#modeGrid .mode-btn').forEach(b => 
+        b.classList.toggle('active', parseInt(b.dataset.mode) === currentMode));
+      document.querySelectorAll('#rangeToggle .range-btn').forEach(b =>
+        b.classList.toggle('active', parseInt(b.dataset.range) === currentRange));
+      document.getElementById('runToggle').classList.remove('active');
+      
+      applyAllParams();
+      updateModeDisplay();
+      
+      setParam('time', 0.5);
+      setParam('intone', 1);
+      setParam('curve', 1);
+      setParam('ramp', 0.5);
+      setParam('fmIndex', 0);
+      
+      selectOutput(6);
+    };
+    
+    window.presetNoise = () => {
+      if (!jf) return;
+      
+      // FLOOM noise generation
+      currentMode = 2;
+      currentRange = 1;
+      runEnabled = true;
+      
+      document.querySelectorAll('#modeGrid .mode-btn').forEach(b => 
+        b.classList.toggle('active', parseInt(b.dataset.mode) === currentMode));
+      document.querySelectorAll('#rangeToggle .range-btn').forEach(b =>
+        b.classList.toggle('active', parseInt(b.dataset.range) === currentRange));
+      document.getElementById('runToggle').classList.add('active');
+      
+      applyAllParams();
+      updateModeDisplay();
+      
+      setParam('time', 0.6);
+      setParam('intone', 0.7);
+      setParam('curve', 0.5);
+      setParam('ramp', 0);
+      setParam('fmIndex', 1);
+      setParam('run', -0.5);
+      
+      selectOutput(6);
+    };
+    
+    window.presetPlucks = () => {
+      if (!jf) return;
+      
+      // PLUME mode
+      currentMode = 1;
+      currentRange = 1;
+      runEnabled = true;
+      
+      document.querySelectorAll('#modeGrid .mode-btn').forEach(b => 
+        b.classList.toggle('active', parseInt(b.dataset.mode) === currentMode));
+      document.querySelectorAll('#rangeToggle .range-btn').forEach(b =>
+        b.classList.toggle('active', parseInt(b.dataset.range) === currentRange));
+      document.getElementById('runToggle').classList.add('active');
+      
+      applyAllParams();
+      updateModeDisplay();
+      
+      setParam('time', 0.5);
+      setParam('intone', 1);
+      setParam('curve', 1);
+      setParam('ramp', 0.5);
+      setParam('fmIndex', 0);
+      setParam('run', 0);
+      
+      selectOutput(6);
+      
+      document.getElementById('triggerMode').value = 'trigger';
+      triggerMode = 'trigger';
+      document.querySelectorAll('.trigger-btn').forEach(b => b.classList.remove('gate-mode'));
+    };
+    
+    // Event listeners
+    document.getElementById('startBtn').addEventListener('click', startAudio);
+    document.getElementById('stopBtn').addEventListener('click', stopAudio);
+    
+    // Output selection
+    document.getElementById('outputSelect').addEventListener('click', (e) => {
+      if (e.target.classList.contains('output-btn')) {
+        selectOutput(parseInt(e.target.dataset.output));
+      }
     });
     
-    // Parameter sliders
-    const paramBindings = [
-      { id: 'time', param: 'time' },
-      { id: 'intone', param: 'intone' },
-      { id: 'ramp', param: 'ramp' },
-      { id: 'curve', param: 'curve' },
-      { id: 'fmIndex', param: 'fmIndex' }
-    ];
+    // Mode selection
+    document.getElementById('modeGrid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.mode-btn');
+      if (btn) {
+        currentMode = parseInt(btn.dataset.mode);
+        document.querySelectorAll('#modeGrid .mode-btn').forEach(b => 
+          b.classList.toggle('active', b === btn));
+        if (jf) jf.params.mode.value = currentMode;
+        updateModeDisplay();
+      }
+    });
     
-    paramBindings.forEach(({ id, param }) => {
-      const slider = document.getElementById(id);
-      const display = document.getElementById(id + 'Val');
+    // Range selection
+    document.getElementById('rangeToggle').addEventListener('click', (e) => {
+      const btn = e.target.closest('.range-btn');
+      if (btn) {
+        currentRange = parseInt(btn.dataset.range);
+        document.querySelectorAll('#rangeToggle .range-btn').forEach(b =>
+          b.classList.toggle('active', b === btn));
+        if (jf) jf.params.range.value = currentRange;
+        updateModeDisplay();
+      }
+    });
+    
+    // RUN toggle
+    document.getElementById('runToggle').addEventListener('click', () => {
+      runEnabled = !runEnabled;
+      document.getElementById('runToggle').classList.toggle('active', runEnabled);
+      if (jf) jf.params.runEnabled.value = runEnabled ? 1 : 0;
+      updateModeDisplay();
+    });
+    
+    // Trigger mode
+    document.getElementById('triggerMode').addEventListener('change', (e) => {
+      triggerMode = e.target.value;
+      document.querySelectorAll('.trigger-btn').forEach(btn => {
+        btn.classList.toggle('gate-mode', triggerMode === 'gate');
+        btn.textContent = triggerMode === 'gate' ? 'GATE' : 'TRIG';
+      });
+    });
+    
+    // Trigger buttons
+    document.querySelectorAll('.trigger-btn').forEach(btn => {
+      const index = parseInt(btn.dataset.index);
       
-      slider.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        display.textContent = val.toFixed(2);
-        if (jf) {
-          jf.params[param].value = val;
+      btn.addEventListener('mousedown', () => {
+        if (!jf) return;
+        btn.classList.add('active');
+        
+        if (triggerMode === 'trigger') {
+          jf.trigger(index);
+        } else {
+          jf.holdGate(index, true);
         }
-        // Update FM gain for fmIndex
-        if (param === 'fmIndex' && fmGain) {
-          // Map fmIndex to a reasonable FM amount
-          fmGain.gain.value = val * 0.1;
+      });
+      
+      btn.addEventListener('mouseup', () => {
+        btn.classList.remove('active');
+        if (triggerMode === 'gate' && jf) {
+          jf.holdGate(index, false);
+        }
+      });
+      
+      btn.addEventListener('mouseleave', () => {
+        btn.classList.remove('active');
+        if (triggerMode === 'gate' && jf) {
+          jf.holdGate(index, false);
         }
       });
     });
     
-    // Volume control
+    // Parameter sliders
+    ['time', 'intone', 'ramp', 'curve', 'fmIndex', 'run'].forEach(name => {
+      const slider = document.getElementById(name);
+      const display = document.getElementById(name + 'Val');
+      
+      slider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        display.textContent = val.toFixed(3);
+        if (jf) jf.params[name].value = val;
+      });
+    });
+    
+    // Volume
     document.getElementById('volume').addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
-      document.getElementById('volumeVal').textContent = val.toFixed(2);
-      if (masterGain) {
-        masterGain.gain.value = val;
-      }
+      document.getElementById('volumeVal').textContent = val.toFixed(3);
+      if (masterGain) masterGain.gain.value = val;
     });
+    
+    // Initialize display
+    updateModeDisplay();
   </script>
 </body>
 </html>
