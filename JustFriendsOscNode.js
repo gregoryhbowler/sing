@@ -61,7 +61,7 @@ export class JustFriendsOscNode extends AudioWorkletNode {
   // ============================================
   
   constructor(context) {
-    super(context, 'just-friends-processor', {
+    super(context, 'just-friends-osc-processor', {
       numberOfInputs: 1,
       numberOfOutputs: 1,
       outputChannelCount: [7],
