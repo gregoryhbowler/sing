@@ -11,8 +11,6 @@ export class MangroveNode extends AudioWorkletNode {
       channelCountMode: 'explicit',
       channelInterpretation: 'discrete'
     });
-
-    this.context = context;
     
     // Store parameter references for easy access
     this.params = {
