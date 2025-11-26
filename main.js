@@ -63,7 +63,7 @@ class Phase4App {
 
       // FM routing gain nodes
       this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 1.0; // Start with FM enabled
+      this.fmGainB.gain.value = 0.0; // Start with FM disabled
 
       // Setup scope visualization
       this.setupScope1();
@@ -125,12 +125,12 @@ class Phase4App {
     this.quantizer.setDepth(1.0);
     this.quantizer.setOffset(0);
 
-    // Mangrove A: Main voice, mid-range settings, FM enabled but at zero depth initially
+    // Mangrove A: Main voice, mid-range settings, FM depth at 0.3
     this.mangroveA.setPitch(0.5);
     this.mangroveA.setBarrel(0.3);
     this.mangroveA.setFormant(0.6);
     this.mangroveA.setAir(0.5);
-    this.mangroveA.setFMIndex(0); // Start with no FM
+    this.mangroveA.setFMIndex(0.3); // FM depth at 0.3 (moderate)
 
     // Mangrove B: FM source, slightly detuned for interesting FM
     this.mangroveB.setPitch(0.52); // Slightly higher than A
@@ -396,6 +396,7 @@ class Phase4App {
     const display = document.getElementById(id + 'Value');
     
     if (knob) {
+      // Update display on input
       knob.addEventListener('input', (e) => {
         const value = parseFloat(e.target.value);
         callback(value);
@@ -403,6 +404,21 @@ class Phase4App {
           display.textContent = value.toFixed(2);
         }
       });
+      
+      // Also bind to 'change' event for better compatibility
+      knob.addEventListener('change', (e) => {
+        const value = parseFloat(e.target.value);
+        if (display) {
+          display.textContent = value.toFixed(2);
+        }
+      });
+      
+      // Set initial display value
+      if (display) {
+        display.textContent = parseFloat(knob.value).toFixed(2);
+      }
+    } else {
+      console.warn(`Knob element not found: ${id}`);
     }
   }
 
@@ -469,6 +485,7 @@ class Phase4App {
   }
 
   syncUIWithParameters() {
+    // Update all parameter displays
     const params = [
       'jf1Time', 'jf1Intone', 'jf1Ramp', 'jf1Curve',
       'quantDepth', 'quantOffset',
@@ -482,12 +499,18 @@ class Phase4App {
       const knob = document.getElementById(param);
       const display = document.getElementById(param + 'Value');
       if (knob && display) {
-        display.textContent = parseFloat(knob.value).toFixed(2);
+        const value = parseFloat(knob.value);
+        display.textContent = value.toFixed(2);
+      } else {
+        if (!knob) console.warn(`Knob not found: ${param}`);
+        if (!display) console.warn(`Display not found: ${param}Value`);
       }
     });
 
     // Update piano keyboard to show C major (default)
     this.updatePianoKeyboard();
+    
+    console.log('UI parameters synced');
   }
 }
 
