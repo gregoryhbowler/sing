@@ -678,6 +678,122 @@ class Phase5App {
     console.log('✓ Modulation matrix UI initialized');
   }
 
+  // ========== TRANSPOSE SEQUENCER UI ==========
+  
+  createSequencerUI() {
+    console.log('[Sequencer] Creating UI...');
+    
+    const grid = document.getElementById('sequencerGrid');
+    
+    if (!grid) {
+      console.error('[Sequencer] ERROR: Grid container not found!');
+      return;
+    }
+    
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < 16; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'seq-cell';
+      cell.dataset.step = i;
+      
+      cell.innerHTML = `
+        <div class="seq-cell-header">
+          <span class="seq-cell-number">${i + 1}</span>
+          <input type="checkbox" class="seq-cell-toggle" data-step="${i}">
+        </div>
+        <div class="transpose-control">
+          <span class="transpose-label">transpose</span>
+          <div class="transpose-display" data-step="${i}">0</div>
+          <input type="range" class="transpose-slider" data-step="${i}" 
+                 min="-24" max="24" value="0" step="1">
+        </div>
+        <div class="repeats-control">
+          <span class="repeats-label">×</span>
+          <input type="number" class="repeats-input" data-step="${i}" 
+                 min="1" max="64" value="1">
+        </div>
+      `;
+      
+      grid.appendChild(cell);
+    }
+    
+    this.setupSequencerListeners();
+    console.log('[Sequencer] ✓ Complete');
+  }
+
+  setupSequencerListeners() {
+    document.querySelectorAll('.seq-cell-toggle').forEach(toggle => {
+      toggle.addEventListener('change', (e) => {
+        const step = parseInt(e.target.dataset.step);
+        const cell = document.querySelector(`.seq-cell[data-step="${step}"]`);
+        if (e.target.checked) {
+          cell.classList.add('active');
+        } else {
+          cell.classList.remove('active');
+        }
+      });
+    });
+    
+    document.querySelectorAll('.transpose-slider').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const step = parseInt(e.target.dataset.step);
+        const transpose = parseInt(e.target.value);
+        const display = document.querySelector(`.transpose-display[data-step="${step}"]`);
+        const sign = transpose > 0 ? '+' : '';
+        display.textContent = `${sign}${transpose}`;
+        display.className = 'transpose-display';
+        if (transpose > 0) display.classList.add('positive');
+        if (transpose < 0) display.classList.add('negative');
+      });
+    });
+    
+    document.querySelectorAll('.repeats-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        let repeats = parseInt(e.target.value);
+        repeats = Math.max(1, Math.min(64, repeats));
+        e.target.value = repeats;
+      });
+    });
+    
+    document.querySelectorAll('.playback-mode-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.playback-mode-btn').forEach(b => 
+          b.classList.remove('active'));
+        e.target.classList.add('active');
+      });
+    });
+    
+    document.getElementById('seqResetBtn')?.addEventListener('click', () => {
+      console.log('[Sequencer] Reset');
+    });
+    
+    document.getElementById('seqClearBtn')?.addEventListener('click', () => {
+      document.querySelectorAll('.seq-cell-toggle').forEach(t => t.checked = false);
+      document.querySelectorAll('.seq-cell').forEach(c => c.classList.remove('active', 'current'));
+      document.querySelectorAll('.transpose-slider').forEach(s => s.value = 0);
+      document.querySelectorAll('.transpose-display').forEach(d => {
+        d.textContent = '0';
+        d.className = 'transpose-display';
+      });
+      document.querySelectorAll('.repeats-input').forEach(i => i.value = 1);
+    });
+    
+    document.getElementById('seqRandomizeBtn')?.addEventListener('click', () => {
+      document.querySelectorAll('.transpose-slider').forEach(slider => {
+        const step = parseInt(slider.dataset.step);
+        const transpose = Math.floor(Math.random() * 49) - 24;
+        slider.value = transpose;
+        const display = document.querySelector(`.transpose-display[data-step="${step}"]`);
+        const sign = transpose > 0 ? '+' : '';
+        display.textContent = `${sign}${transpose}`;
+        display.className = 'transpose-display';
+        if (transpose > 0) display.classList.add('positive');
+        if (transpose < 0) display.classList.add('negative');
+      });
+    });
+  }
+
   bindModMatrixControls() {
     // Enable/disable checkboxes
     document.querySelectorAll('.mod-enable').forEach(checkbox => {
@@ -775,10 +891,12 @@ class Phase5App {
       document.addEventListener('DOMContentLoaded', () => {
         this.bindControls();
         this.initModMatrixUI();
+        this.createSequencerUI();
       });
     } else {
       this.bindControls();
       this.initModMatrixUI();
+      this.createSequencerUI();
     }
   }
 
