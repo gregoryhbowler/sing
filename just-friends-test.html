@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Just Friends Oscillator Test</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #f0f0f0;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #888;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 30px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .control-group {
+      background: #252525;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin: 5px 0;
+      accent-color: #4a9eff;
+    }
+    .value-display {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 14px;
+      color: #4a9eff;
+    }
+    button {
+      background: #4a9eff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #3a8eef;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    button.active {
+      background: #2ecc71;
+    }
+    .preset-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .preset-buttons button {
+      padding: 8px 16px;
+      font-size: 12px;
+      background: #333;
+    }
+    .preset-buttons button:hover {
+      background: #444;
+    }
+    .output-select {
+      margin: 20px 0;
+    }
+    select {
+      background: #333;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 4px;
+      width: 200px;
+    }
+    .status {
+      padding: 10px;
+      background: #252525;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .scope-container {
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 20px 0;
+    }
+    canvas {
+      width: 100%;
+      height: 150px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Just Friends Oscillator Test</h1>
+  
+  <div>
+    <button id="startBtn">▶ Start Audio</button>
+    <button id="stopBtn" disabled>■ Stop</button>
+  </div>
+  
+  <div class="status" id="status">Audio not started. Click "Start Audio" to begin.</div>
+  
+  <h2>Waveform</h2>
+  <div class="scope-container">
+    <canvas id="scope"></canvas>
+  </div>
+  
+  <h2>Output Select</h2>
+  <div class="output-select">
+    <select id="outputSelect">
+      <option value="6">MIX (all oscillators)</option>
+      <option value="0">IDENTITY (1N)</option>
+      <option value="1">2N</option>
+      <option value="2">3N</option>
+      <option value="3">4N</option>
+      <option value="4">5N</option>
+      <option value="5">6N</option>
+    </select>
+  </div>
+  
+  <h2>Controls</h2>
+  <div class="controls">
+    <div class="control-group">
+      <label>TIME (Pitch)</label>
+      <input type="range" id="time" min="0" max="1" step="0.01" value="0.5">
+      <span class="value-display" id="timeVal">0.50</span>
+    </div>
+    
+    <div class="control-group">
+      <label>INTONE (Harmonic Spread)</label>
+      <input type="range" id="intone" min="0" max="1" step="0.01" value="0.5">
+      <span class="value-display" id="intoneVal">0.50</span>
+      <div class="preset-buttons">
+        <button onclick="setIntone(0)">Undertones</button>
+        <button onclick="setIntone(0.5)">Unison</button>
+        <button onclick="setIntone(1)">Overtones</button>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <label>RAMP (Rise/Fall)</label>
+      <input type="range" id="ramp" min="0" max="1" step="0.01" value="0.5">
+      <span class="value-display" id="rampVal">0.50</span>
+      <div class="preset-buttons">
+        <button onclick="setRamp(0)">Saw ↓</button>
+        <button onclick="setRamp(0.5)">Triangle</button>
+        <button onclick="setRamp(1)">Ramp ↑</button>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <label>CURVE (Waveshape)</label>
+      <input type="range" id="curve" min="0" max="1" step="0.01" value="0.5">
+      <span class="value-display" id="curveVal">0.50</span>
+      <div class="preset-buttons">
+        <button onclick="setCurve(0)">Square</button>
+        <button onclick="setCurve(0.5)">Linear</button>
+        <button onclick="setCurve(1)">Sine</button>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <label>FM Index</label>
+      <input type="range" id="fmIndex" min="0" max="1" step="0.01" value="0">
+      <span class="value-display" id="fmIndexVal">0.00</span>
+    </div>
+    
+    <div class="control-group">
+      <label>Master Volume</label>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.2">
+      <span class="value-display" id="volumeVal">0.20</span>
+    </div>
+  </div>
+  
+  <h2>Wave Presets</h2>
+  <div class="preset-buttons">
+    <button onclick="presetSine()">Sine</button>
+    <button onclick="presetTriangle()">Triangle</button>
+    <button onclick="presetSaw()">Saw</button>
+    <button onclick="presetSquare()">Square</button>
+    <button onclick="presetOvertones()">Harmonic Stack</button>
+    <button onclick="presetChord()">Major Chord</button>
+  </div>
+
+  <script type="module">
+    import { JustFriendsOscNode } from './JustFriendsOscNode.js';
+    
+    let ctx = null;
+    let jf = null;
+    let masterGain = null;
+    let analyser = null;
+    let currentOutput = 6; // MIX by default
+    let fmOsc = null;
+    let fmGain = null;
+    let animationId = null;
+    
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const status = document.getElementById('status');
+    const canvas = document.getElementById('scope');
+    const canvasCtx = canvas.getContext('2d');
+    
+    // Expose functions to window for button onclick handlers
+    window.setIntone = (val) => {
+      if (jf) {
+        jf.params.intone.value = val;
+        document.getElementById('intone').value = val;
+        document.getElementById('intoneVal').textContent = val.toFixed(2);
+      }
+    };
+    
+    window.setRamp = (val) => {
+      if (jf) {
+        jf.params.ramp.value = val;
+        document.getElementById('ramp').value = val;
+        document.getElementById('rampVal').textContent = val.toFixed(2);
+      }
+    };
+    
+    window.setCurve = (val) => {
+      if (jf) {
+        jf.params.curve.value = val;
+        document.getElementById('curve').value = val;
+        document.getElementById('curveVal').textContent = val.toFixed(2);
+      }
+    };
+    
+    window.presetSine = () => {
+      window.setCurve(1);
+      window.setRamp(0.5);
+      window.setIntone(0.5);
+    };
+    
+    window.presetTriangle = () => {
+      window.setCurve(0.5);
+      window.setRamp(0.5);
+      window.setIntone(0.5);
+    };
+    
+    window.presetSaw = () => {
+      window.setCurve(0.5);
+      window.setRamp(0);
+      window.setIntone(0.5);
+    };
+    
+    window.presetSquare = () => {
+      window.setCurve(0);
+      window.setRamp(0.5);
+      window.setIntone(0.5);
+    };
+    
+    window.presetOvertones = () => {
+      window.setCurve(1);
+      window.setRamp(0.5);
+      window.setIntone(1);
+    };
+    
+    window.presetChord = () => {
+      // Major chord voicing using overtones
+      window.setCurve(1);
+      window.setRamp(0.5);
+      window.setIntone(1);
+      // Select MIX output
+      document.getElementById('outputSelect').value = '6';
+      selectOutput(6);
+    };
+    
+    function selectOutput(index) {
+      if (!jf || !masterGain) return;
+      
+      // Disconnect current
+      for (let i = 0; i <= 6; i++) {
+        try {
+          jf.getOutput(i).disconnect(analyser);
+        } catch (e) {}
+      }
+      
+      // Connect new
+      currentOutput = index;
+      jf.getOutput(index).connect(analyser);
+    }
+    
+    async function startAudio() {
+      try {
+        ctx = new AudioContext();
+        status.textContent = 'Loading processor module...';
+        
+        await ctx.audioWorklet.addModule('./just-friends-osc-processor.js');
+        status.textContent = 'Creating Just Friends node...';
+        
+        jf = new JustFriendsOscNode(ctx);
+        jf.setCycleSoundMode();
+        
+        // Create master gain
+        masterGain = ctx.createGain();
+        masterGain.gain.value = parseFloat(document.getElementById('volume').value);
+        
+        // Create analyser for visualization
+        analyser = ctx.createAnalyser();
+        analyser.fftSize = 2048;
+        
+        // Connect: JF output -> analyser -> master gain -> destination
+        jf.getOutput(currentOutput).connect(analyser);
+        analyser.connect(masterGain);
+        masterGain.connect(ctx.destination);
+        
+        // Create FM oscillator
+        fmOsc = ctx.createOscillator();
+        fmOsc.frequency.value = 2;
+        fmGain = ctx.createGain();
+        fmGain.gain.value = 0;
+        fmOsc.connect(fmGain);
+        fmGain.connect(jf.getFMInput());
+        fmOsc.start();
+        
+        // Apply initial parameter values
+        jf.params.time.value = parseFloat(document.getElementById('time').value);
+        jf.params.intone.value = parseFloat(document.getElementById('intone').value);
+        jf.params.ramp.value = parseFloat(document.getElementById('ramp').value);
+        jf.params.curve.value = parseFloat(document.getElementById('curve').value);
+        jf.params.fmIndex.value = parseFloat(document.getElementById('fmIndex').value);
+        
+        await ctx.resume();
+        
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        status.textContent = `Audio running at ${ctx.sampleRate}Hz. Adjust controls to explore!`;
+        
+        // Start visualization
+        drawScope();
+        
+      } catch (err) {
+        status.textContent = `Error: ${err.message}`;
+        console.error(err);
+      }
+    }
+    
+    function stopAudio() {
+      if (ctx) {
+        ctx.close();
+        ctx = null;
+        jf = null;
+        masterGain = null;
+        analyser = null;
+        fmOsc = null;
+        fmGain = null;
+      }
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      status.textContent = 'Audio stopped.';
+      
+      // Clear canvas
+      canvasCtx.fillStyle = '#000';
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    function drawScope() {
+      if (!analyser) return;
+      
+      animationId = requestAnimationFrame(drawScope);
+      
+      const bufferLength = analyser.fftSize;
+      const dataArray = new Float32Array(bufferLength);
+      analyser.getFloatTimeDomainData(dataArray);
+      
+      // Set canvas size to match display size
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      canvasCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      
+      const width = rect.width;
+      const height = rect.height;
+      
+      canvasCtx.fillStyle = '#000';
+      canvasCtx.fillRect(0, 0, width, height);
+      
+      // Draw center line
+      canvasCtx.strokeStyle = '#333';
+      canvasCtx.lineWidth = 1;
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(0, height / 2);
+      canvasCtx.lineTo(width, height / 2);
+      canvasCtx.stroke();
+      
+      // Draw waveform
+      canvasCtx.strokeStyle = '#4a9eff';
+      canvasCtx.lineWidth = 2;
+      canvasCtx.beginPath();
+      
+      const sliceWidth = width / bufferLength;
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i];
+        const y = (1 - v) * height / 2;
+        
+        if (i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+      
+      canvasCtx.stroke();
+      
+      // Reset scale for next frame
+      canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    
+    // Event listeners
+    startBtn.addEventListener('click', startAudio);
+    stopBtn.addEventListener('click', stopAudio);
+    
+    document.getElementById('outputSelect').addEventListener('change', (e) => {
+      selectOutput(parseInt(e.target.value));
+    });
+    
+    // Parameter sliders
+    const paramBindings = [
+      { id: 'time', param: 'time' },
+      { id: 'intone', param: 'intone' },
+      { id: 'ramp', param: 'ramp' },
+      { id: 'curve', param: 'curve' },
+      { id: 'fmIndex', param: 'fmIndex' }
+    ];
+    
+    paramBindings.forEach(({ id, param }) => {
+      const slider = document.getElementById(id);
+      const display = document.getElementById(id + 'Val');
+      
+      slider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        display.textContent = val.toFixed(2);
+        if (jf) {
+          jf.params[param].value = val;
+        }
+        // Update FM gain for fmIndex
+        if (param === 'fmIndex' && fmGain) {
+          // Map fmIndex to a reasonable FM amount
+          fmGain.gain.value = val * 0.1;
+        }
+      });
+    });
+    
+    // Volume control
+    document.getElementById('volume').addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      document.getElementById('volumeVal').textContent = val.toFixed(2);
+      if (masterGain) {
+        masterGain.gain.value = val;
+      }
+    });
+  </script>
+</body>
+</html>
