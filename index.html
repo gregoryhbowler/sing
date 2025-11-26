@@ -240,16 +240,17 @@
       </div>
 
       <div class="param-row">
-        <label for="tsFmDepth">fm depth</label>
-        <input type="range" id="tsFmDepth" min="0" max="1" step="0.001" value="0">
-        <span class="param-value" id="tsFmDepthValue">0.00</span>
+        <label for="tsFmAtten">fm atten</label>
+        <input type="range" id="tsFmAtten" min="0" max="1" step="0.001" value="0.5">
+        <span class="param-value" id="tsFmAttenValue">0.50</span>
       </div>
 
       <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px;">
-        <strong>CROSSOVER:</strong> LOW=LP, HIGH=HP, CENTRE=band<br>
-        <strong>FORMANT:</strong> All three are bandpass filters<br>
-        <strong>QUALITY:</strong> CCW=notch, noon=neutral, CW=resonance→oscillation<br>
-        <strong>SPAN:</strong> spreads LOW/HIGH apart (CENTRE follows in crossover)
+        <strong>FREQ:</strong> Main cutoff (20Hz - 10kHz, exponential 1V/oct)<br>
+        <strong>SPAN:</strong> Spreads LOW/HIGH apart (CCW=narrow, CW=wide)<br>
+        <strong>QUALITY:</strong> CCW=notch, noon=neutral (Q=0.707), CW=resonance→oscillation<br>
+        <strong>MODE:</strong> Crossover (LP/band/HP) vs Formant (3× BP)<br>
+        <strong>FM ATTEN:</strong> Bipolar (CCW=negative, noon=off, CW=positive)
       </div>
     </div>
 
