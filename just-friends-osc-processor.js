@@ -83,6 +83,13 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
     // For SPILL mode: IDENTITY's EOC triggers others
     this.identityEOC = false;
     
+    // Pending triggers from message port (for programmatic triggering)
+    this.pendingTriggers = new Uint8Array(6);
+    this.pendingGates = new Int8Array(6); // -1 = go low, 0 = no change, 1 = go high
+    
+    // Previous message gate states for edge detection
+    this._prevMessageGate = new Uint8Array(6);
+    
     // Frequency range constants
     this.SOUND_BASE_FREQ = 261.63; // C4
     this.SOUND_OCTAVE_RANGE = 7;
@@ -111,13 +118,13 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
       if (e.data.type === 'trigger') {
         const index = e.data.index;
         if (index >= 0 && index < 6) {
-          this.handleTrigger(index, true, 2); // mode=CYCLE as default
+          this.pendingTriggers[index] = 1;
         }
       } else if (e.data.type === 'gate') {
         const index = e.data.index;
         const high = e.data.high;
         if (index >= 0 && index < 6) {
-          this.gateStates[index] = high ? 1 : 0;
+          this.pendingGates[index] = high ? 1 : -1;
         }
       }
     };
@@ -295,10 +302,16 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
 
   /**
    * Handle gate input for sustain mode
+   * audioGateHigh is from audio input, messageGateHigh is from message port
    */
-  processGate(index, gateHigh, mode, runValue = 0, runEnabled = false) {
+  processGate(index, audioGateHigh, mode, runValue = 0, runEnabled = false) {
     const state = this.states[index];
-    const prevGate = this.gateStates[index];
+    
+    // Combine audio and message gate states
+    // Message gate state is stored in gateStates from pendingGates
+    const messageGateHigh = this.gateStates[index] > 0;
+    const gateHigh = audioGateHigh || messageGateHigh;
+    const prevGate = this.prevGateInputs[index] > this.TRIGGER_THRESHOLD || this._prevMessageGate?.[index];
     
     if (mode === 1) {
       // SUSTAIN mode
@@ -317,7 +330,13 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
       }
     }
     
-    this.gateStates[index] = gateHigh ? 1 : 0;
+    // Store message gate state for edge detection
+    if (!this._prevMessageGate) {
+      this._prevMessageGate = new Uint8Array(6);
+    }
+    this._prevMessageGate[index] = messageGateHigh ? 1 : 0;
+    
+    // Note: Don't overwrite gateStates here - it's managed by pendingGates
   }
 
   // ============================================
@@ -575,13 +594,76 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
         }
       }
       
+      // Process pending triggers/gates from message port (only on first sample of block)
+      if (i === 0) {
+        // Cascade pending triggers from 6N down to IDENTITY
+        // (mimics hardware normalling)
+        let cascadeTrig = 0;
+        let cascadeGate = 0;
+        
+        for (let osc = 5; osc >= 0; osc--) {
+          // Check if this oscillator has its own trigger/gate
+          if (this.pendingTriggers[osc]) {
+            cascadeTrig = 1;
+          }
+          if (this.pendingGates[osc] !== 0) {
+            cascadeGate = this.pendingGates[osc];
+          }
+          
+          // Apply cascade
+          if (cascadeTrig && !this.pendingTriggers[osc]) {
+            this.pendingTriggers[osc] = cascadeTrig;
+          }
+          if (cascadeGate !== 0 && this.pendingGates[osc] === 0) {
+            this.pendingGates[osc] = cascadeGate;
+          }
+        }
+        
+        for (let osc = 0; osc < 6; osc++) {
+          // Handle pending gate changes
+          if (this.pendingGates[osc] === 1) {
+            this.gateStates[osc] = 1;
+            this.pendingGates[osc] = 0;
+          } else if (this.pendingGates[osc] === -1) {
+            this.gateStates[osc] = 0;
+            this.pendingGates[osc] = 0;
+          }
+          
+          // For PLUME mode, triggers should create a short gate pulse (pluck)
+          if (this.pendingTriggers[osc] && runEnabled && range === 1 && mode === 1) {
+            // Set LPG to fully open for a pluck
+            this.lpgEnvelopes[osc] = 1.0;
+            this.pendingTriggers[osc] = 0;
+          }
+        }
+      }
+      
       // Detect trigger edges and update gate states
       for (let osc = 0; osc < 6; osc++) {
-        const trigVal = triggerValues[osc];
+        let trigVal = triggerValues[osc];
+        
+        // Add message-based gate state
+        if (this.gateStates[osc]) {
+          trigVal = Math.max(trigVal, 1);
+        }
+        
+        // Check for pending trigger (acts as rising edge)
+        let risingEdge = false;
+        if (this.pendingTriggers[osc] && i === 0) {
+          risingEdge = true;
+          this.pendingTriggers[osc] = 0;
+        }
+        
         const prevTrig = this.prevGateInputs[osc];
         const gateHigh = trigVal > this.TRIGGER_THRESHOLD;
         const wasHigh = prevTrig > this.TRIGGER_THRESHOLD;
-        const risingEdge = gateHigh && !wasHigh;
+        
+        if (!risingEdge) {
+          risingEdge = gateHigh && !wasHigh;
+        }
+        
+        // Store the effective trigger value for modes that need it
+        triggerValues[osc] = trigVal;
         
         // Process based on mode
         if (mode === 0) {
@@ -651,10 +733,14 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
                                               runValue, ramp, curve, dt);
             } else if (mode === 1) {
               // PLUME: LPG-processed VCOs
-              const gateHigh = triggerValues[osc] > this.TRIGGER_THRESHOLD;
+              // Use both audio trigger value AND message-based gate state
+              const audioGate = triggerValues[osc] > this.TRIGGER_THRESHOLD;
+              const messageGate = this.gateStates[osc] > 0;
+              const gateHigh = audioGate || messageGate;
+              
               const lpgLevel = this.processPlume(osc, gateHigh, runValue, dt);
               
-              // Generate oscillator
+              // Generate oscillator (always running in PLUME)
               const phaseInc = freq / sampleRate;
               this.phases[osc] += phaseInc;
               while (this.phases[osc] >= 1) this.phases[osc] -= 1;
