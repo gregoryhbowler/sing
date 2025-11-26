@@ -140,25 +140,29 @@ class MangroveProcessor extends AudioWorkletProcessor {
       
       this.frequency = baseFreq * Math.pow(2, totalVolt);
       
-      // === CRITICAL FM UPDATE: Proper scaling for rich timbres ===
-      // Apply linear FM with dramatically increased depth
+      // === THROUGH-ZERO FM: Proper analog-style FM synthesis ===
       const fmIndexParam = parameters.fmIndex[i] || parameters.fmIndex[0];
       const fmSignal = fmInput[i] || 0;
       
-      // Scale fmIndex parameter (0-1) to useful FM synthesis index (0-20)
-      // FM Index in synthesis: ratio of frequency deviation to modulator frequency
-      // Index 1-5 = harmonic tones, 5-10 = complex tones, 10-20 = inharmonic/metallic
-      const actualFmIndex = fmIndexParam * 20.0;
+      // fmSignal is now properly normalized ±1 (from Mangrove SQUARE output)
       
-      // fmSignal is normalized ±1 (from ±5V square wave or other audio source)
-      // Linear FM: frequency_deviation = FM_index × carrier_frequency × modulator_signal
-      // This creates the rich sidebands shown in the technical manual (page 19)
+      // Scale fmIndex parameter (0-1) to useful FM synthesis index (0-10)
+      // FM Index 1-3 = harmonic, 3-6 = complex, 6-10 = inharmonic
+      const actualFmIndex = fmIndexParam * 10.0;
+      
+      // Through-zero FM: Allow frequency to go negative
+      // When frequency goes negative, phase increments backwards
+      // This creates proper FM sidebands without gating artifacts
       const fmAmount = fmSignal * actualFmIndex * this.frequency;
-      const modulatedFreq = Math.max(0.1, this.frequency + fmAmount);
+      const modulatedFreq = this.frequency + fmAmount;
       
-      // Advance triangle oscillator phase
-      this.phase += (modulatedFreq / this.sampleRate);
-      if (this.phase >= 1.0) this.phase -= 1.0;
+      // Advance phase - can go forwards OR backwards
+      const phaseIncrement = modulatedFreq / this.sampleRate;
+      this.phase += phaseIncrement;
+      
+      // Wrap phase in both directions for through-zero operation
+      while (this.phase >= 1.0) this.phase -= 1.0;
+      while (this.phase < 0.0) this.phase += 1.0;
       
       // Generate triangle and square
       const triangle = this.generateTriangle(this.phase);
@@ -244,8 +248,9 @@ class MangroveProcessor extends AudioWorkletProcessor {
       
       // === OUTPUTS ===
       
-      squareOut[i] = square * 5.0; // ±5V
-      formantOut[i] = shaped; // ±5V with waveshaping
+      // Normalize to Web Audio range (±1)
+      squareOut[i] = square; // Already ±1
+      formantOut[i] = shaped / 5.0; // ±5V → ±1
     }
     
     return true;
