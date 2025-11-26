@@ -38,7 +38,11 @@ export class ModulationMatrixNode extends AudioWorkletNode {
     }
     
     // Create input gain node (for connecting JF slopes)
+    // Configure for 5-channel input (one per JF slope: 2N, 3N, 4N, 5N, 6N)
     this.input = context.createGain();
+    this.input.channelCount = 5;
+    this.input.channelCountMode = 'explicit';
+    this.input.channelInterpretation = 'discrete';
     this.input.connect(this, 0, 0);
     
     console.log('ModulationMatrix Node created');
