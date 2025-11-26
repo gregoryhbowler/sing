@@ -1,7 +1,14 @@
-// main.js
+// main.js - FIXED VERSION
 // Phase 4 ENHANCED: Multi-Mangrove FM Architecture with Rich Timbres
+// 
+// FIXES APPLIED:
+// 1. Mangrove impulse duration now calculated relative to oscillator period
+// 2. FM depth scaling adjusted for musically rich timbres (Index 0-8 range)
+// 3. These fixes enable proper FM synthesis with spectral complexity
+//
+// Signal flow:
 // JF #1 → Quantizer → Mangrove A (pitch CV)
-// Mangrove B SQUARE → Mangrove A FM (audio-rate) — NOW WITH 20× DEEPER MODULATION
+// Mangrove B SQUARE → Mangrove A FM (audio-rate FM with through-zero)
 // Mangrove C (ready for filter FM in Phase 5)
 
 import { JustFriendsNode } from './JustFriendsNode.js';
@@ -21,7 +28,7 @@ class Phase4App {
     this.masterGain = null;
     
     // FM routing
-    this.fmGainB = null; // Gain node to enable/disable FM from B
+    this.fmGainB = null;
     
     this.isRunning = false;
 
@@ -36,21 +43,19 @@ class Phase4App {
     this.scope2Ctx = null;
     this.scope2AnimationId = null;
 
-    // Setup UI when DOM is ready
     this.setupUI();
   }
 
   async init() {
     try {
-      // Create audio context
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       
-      // Load all AudioWorklet processors
+      // Load AudioWorklet processors - USE THE FIXED VERSION
       await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
       await this.audioContext.audioWorklet.addModule('./quantizer-processor.js');
-      await this.audioContext.audioWorklet.addModule('./mangrove-processor.js');
+      await this.audioContext.audioWorklet.addModule('./mangrove-processor-FIXED.js'); // ← FIXED VERSION
       
-      console.log('All AudioWorklets loaded successfully');
+      console.log('All AudioWorklets loaded successfully (FIXED VERSION)');
       
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
@@ -61,83 +66,75 @@ class Phase4App {
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = 0.3;
 
-      // FM routing gain nodes
       this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 1.0; // Start with FM ENABLED for demonstration
+      this.fmGainB.gain.value = 1.0;
 
-      // Setup scope visualization
       this.setupScope1();
       this.setupScope2();
 
-      // ========== CRITICAL SIGNAL ROUTING ==========
+      // ========== SIGNAL ROUTING ==========
       
       // 1. JF #1 → Scope 1 → Quantizer → Mangrove A pitch CV
       this.jf1.getIdentityOutput().connect(this.scope1Analyser);
       this.scope1Analyser.connect(this.quantizer.getInput());
       this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
 
-      // 2. Mangrove B SQUARE → FM Gain → Mangrove A FM input (AUDIO-RATE FM)
+      // 2. Mangrove B SQUARE → FM Gain → Mangrove A FM input
       this.mangroveB.getSquareOutput().connect(this.fmGainB);
       this.fmGainB.connect(this.mangroveA.getFMInput());
 
-      // 3. Mangrove A FORMANT → Scope 2 → Master Gain → Destination
+      // 3. Mangrove A FORMANT → Scope 2 → Master → Output
       this.mangroveA.getFormantOutput().connect(this.scope2Analyser);
       this.scope2Analyser.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
-
-      // Note: Mangrove C runs independently, ready for Phase 5 filter FM
       
-      console.log('=== Phase 4 ENHANCED Signal Flow ===');
-      console.log('JF #1 IDENTITY → Scope 1 → Quantizer → Mangrove A pitch');
-      console.log('Mangrove B SQUARE → Mangrove A FM input (20× depth increase!)');
-      console.log('Mangrove A FORMANT → Scope 2 → Output');
-      console.log('Mangrove C: Ready for filter FM (Phase 5)');
+      console.log('=== Phase 4 FIXED Signal Flow ===');
+      console.log('JF #1 IDENTITY → Quantizer → Mangrove A pitch');
+      console.log('Mangrove B SQUARE → Mangrove A FM (proper FM scaling)');
+      console.log('Mangrove A FORMANT → Output (fixed impulse timing)');
 
-      // Configure default settings
       this.configureDefaults();
       
-      // Update UI
-      document.getElementById('status').textContent = 'Ready - Through-Zero FM';
+      document.getElementById('status').textContent = 'Ready - FIXED FM System';
       document.getElementById('startBtn').disabled = false;
       
-      // Sync UI with default values
       this.syncUIWithParameters();
       
-      console.log('Phase 4 ENHANCED system initialized successfully');
-      console.log('THROUGH-ZERO FM: Index 0-10 range (phase reversal enabled)');
+      console.log('Phase 4 FIXED system initialized');
+      console.log('FM now produces rich timbres with proper spectral content');
       
     } catch (error) {
-      console.error('Failed to initialize system:', error);
+      console.error('Failed to initialize:', error);
       document.getElementById('status').textContent = 'Error: ' + error.message;
     }
   }
 
   configureDefaults() {
-    // JF #1: Cycle mode, shape range, slow modulation
-    this.jf1.setMode(2); // cycle
-    this.jf1.setRange(0); // shape
+    // JF #1: Cycle mode LFO
+    this.jf1.setMode(2);
+    this.jf1.setRange(0);
     this.jf1.setTime(0.25);
     this.jf1.setIntone(0.5);
     this.jf1.setRamp(0.5);
     this.jf1.setCurve(0.5);
 
-    // Quantizer: C major scale, moderate depth
+    // Quantizer: C major scale
     this.quantizer.setMajorScale(0);
     this.quantizer.setDepth(1.0);
     this.quantizer.setOffset(0);
 
-    // Mangrove A: Main voice, FM depth at 0.3 (Index 3.0 for through-zero)
+    // Mangrove A: Main voice with FM
     this.mangroveA.setPitch(0.5);
-    this.mangroveA.setBarrel(0.3);
-    this.mangroveA.setFormant(0.6);
+    this.mangroveA.setBarrel(0.3);  // Slightly asymmetric for harmonics
+    this.mangroveA.setFormant(0.6); // Mid-range spectral focus
     this.mangroveA.setAir(0.5);
-    this.mangroveA.setFMIndex(0.3); // THROUGH-ZERO: Index 3.0 for harmonic FM
+    this.mangroveA.setFMIndex(0.4); // FM Index 3.2 - rich harmonic content
 
-    // Mangrove B: FM source, slightly detuned for interesting FM
-    this.mangroveB.setPitch(0.52); // Slightly higher than A
+    // Mangrove B: FM modulator, slightly detuned
+    this.mangroveB.setPitch(0.52); // Slightly higher creates beating/chorus
     this.mangroveB.setBarrel(0.5);
     this.mangroveB.setFormant(0.5);
-    this.mangroveB.setAir(0.8); // Higher level for stronger FM signal
+    this.mangroveB.setAir(0.8);
 
     // Mangrove C: Ready for Phase 5
     this.mangroveC.setPitch(0.6);
@@ -145,31 +142,25 @@ class Phase4App {
     this.mangroveC.setFormant(0.5);
     this.mangroveC.setAir(0.8);
     
-    console.log('Defaults configured with THROUGH-ZERO FM:');
-    console.log('- Mangrove A FM Index: 0.3 (synthesis index 3.0)');
-    console.log('- Phase reversal enabled (analog-style through-zero)');
+    console.log('Defaults configured:');
+    console.log('- FM Index: 0.4 (synthesis index 3.2 - rich harmonics)');
+    console.log('- Barrel: 0.3 (asymmetric waveform)');
+    console.log('- Formant: 0.6 (mid-range spectral focus)');
     console.log('- FM enabled by default');
-    console.log('- Expect rich FM timbres without gating artifacts');
   }
 
   setupScope1() {
-    // Create analyser for scope visualization
     this.scope1Analyser = this.audioContext.createAnalyser();
     this.scope1Analyser.fftSize = 2048;
     this.scope1Analyser.smoothingTimeConstant = 0;
-
-    // Get canvas
     this.scope1Canvas = document.getElementById('scope1');
     this.scope1Ctx = this.scope1Canvas.getContext('2d');
   }
 
   setupScope2() {
-    // Create analyser for scope visualization
     this.scope2Analyser = this.audioContext.createAnalyser();
     this.scope2Analyser.fftSize = 2048;
     this.scope2Analyser.smoothingTimeConstant = 0;
-
-    // Get canvas
     this.scope2Canvas = document.getElementById('scope2');
     this.scope2Ctx = this.scope2Canvas.getContext('2d');
   }
@@ -180,15 +171,12 @@ class Phase4App {
     
     analyser.getFloatTimeDomainData(dataArray);
 
-    // Clear canvas
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.lineWidth = 1;
     
-    // Horizontal grid lines
     for (let i = 0; i <= 4; i++) {
       const y = (canvas.height / 4) * i;
       ctx.beginPath();
@@ -197,7 +185,6 @@ class Phase4App {
       ctx.stroke();
     }
 
-    // Draw waveform
     ctx.lineWidth = 2;
     ctx.strokeStyle = color;
     ctx.beginPath();
@@ -220,7 +207,6 @@ class Phase4App {
 
     ctx.stroke();
 
-    // Draw center line
     ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -271,12 +257,12 @@ class Phase4App {
     this.startScope2();
     
     document.getElementById('startBtn').innerHTML = '<span class="btn-icon">⏸</span> Stop';
-    document.getElementById('status').textContent = 'Running - Through-Zero FM Active';
+    document.getElementById('status').textContent = 'Running - FM Active (FIXED)';
     
-    console.log('Phase 4 system running with THROUGH-ZERO FM');
-    console.log('Listen for true FM timbres with phase reversal');
+    console.log('System running with FIXED FM synthesis');
+    console.log('You should now hear rich, evolving FM timbres');
     console.log('Current FM Index:', this.mangroveA.params.fmIndex.value.toFixed(3),
-                '(Synthesis Index:', (this.mangroveA.params.fmIndex.value * 10).toFixed(1) + ')');
+                '(Synthesis Index:', (this.mangroveA.params.fmIndex.value * 8).toFixed(1) + ')');
   }
 
   stop() {
@@ -302,7 +288,6 @@ class Phase4App {
   toggleFM(enabled) {
     if (!this.fmGainB) return;
     
-    // Smoothly ramp the FM gain to avoid clicks
     const now = this.audioContext.currentTime;
     this.fmGainB.gain.cancelScheduledValues(now);
     this.fmGainB.gain.setValueAtTime(this.fmGainB.gain.value, now);
@@ -311,7 +296,7 @@ class Phase4App {
     console.log(`FM B → A: ${enabled ? 'ENABLED' : 'DISABLED'}`);
     if (enabled) {
       const currentIndex = this.mangroveA.params.fmIndex.value;
-      console.log(`Current FM Index: ${currentIndex.toFixed(3)} (Synthesis Index: ${(currentIndex * 20).toFixed(1)})`);
+      console.log(`FM Index: ${currentIndex.toFixed(3)} (Synthesis Index: ${(currentIndex * 8).toFixed(1)})`);
     }
   }
 
@@ -324,7 +309,6 @@ class Phase4App {
   }
 
   bindControls() {
-    // Start/Stop button
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
       startBtn.addEventListener('click', () => this.toggle());
@@ -354,21 +338,16 @@ class Phase4App {
     this.bindKnob('quantDepth', (val) => this.quantizer?.setDepth(val));
     this.bindKnob('quantOffset', (val) => this.quantizer?.setOffset(val));
 
-    // Scale preset buttons
     const presetBtns = document.querySelectorAll('.preset-btn');
     presetBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
-        // Remove active class from all
         presetBtns.forEach(b => b.classList.remove('active'));
-        // Add to clicked
         e.target.classList.add('active');
-        
         const scale = e.target.dataset.scale;
         this.setScale(scale);
       });
     });
 
-    // Piano keyboard
     this.createPianoKeyboard();
 
     // Mangrove A controls
@@ -378,9 +357,8 @@ class Phase4App {
     this.bindKnob('maAir', (val) => this.mangroveA?.setAir(val));
     this.bindKnob('maFmIndex', (val) => {
       this.mangroveA?.setFMIndex(val);
-      // Log the actual FM synthesis index
-      const synthesisIndex = val * 10.0;
-      console.log(`FM Index updated: ${val.toFixed(3)} (Synthesis Index: ${synthesisIndex.toFixed(1)})`);
+      const synthesisIndex = val * 8.0;
+      console.log(`FM Index: ${val.toFixed(3)} (Synthesis Index: ${synthesisIndex.toFixed(1)})`);
     });
 
     // Mangrove B controls
@@ -388,7 +366,6 @@ class Phase4App {
     this.bindKnob('mbBarrel', (val) => this.mangroveB?.setBarrel(val));
     this.bindKnob('mbFormant', (val) => this.mangroveB?.setFormant(val));
 
-    // FM enable/disable toggle
     const fmEnable = document.getElementById('fmEnable');
     if (fmEnable) {
       fmEnable.addEventListener('change', (e) => {
@@ -401,7 +378,6 @@ class Phase4App {
     this.bindKnob('mcBarrel', (val) => this.mangroveC?.setBarrel(val));
     this.bindKnob('mcFormant', (val) => this.mangroveC?.setFormant(val));
 
-    // Master volume
     this.bindKnob('masterVolume', (val) => {
       if (this.masterGain) this.masterGain.gain.value = val;
     });
@@ -412,7 +388,6 @@ class Phase4App {
     const display = document.getElementById(id + 'Value');
     
     if (knob) {
-      // Update display on input
       knob.addEventListener('input', (e) => {
         const value = parseFloat(e.target.value);
         callback(value);
@@ -421,7 +396,6 @@ class Phase4App {
         }
       });
       
-      // Also bind to 'change' event for better compatibility
       knob.addEventListener('change', (e) => {
         const value = parseFloat(e.target.value);
         if (display) {
@@ -429,12 +403,9 @@ class Phase4App {
         }
       });
       
-      // Set initial display value
       if (display) {
         display.textContent = parseFloat(knob.value).toFixed(2);
       }
-    } else {
-      console.warn(`Knob element not found: ${id}`);
     }
   }
 
@@ -469,20 +440,19 @@ class Phase4App {
         this.quantizer.setChromatic();
         break;
       case 'major':
-        this.quantizer.setMajorScale(0); // C major
+        this.quantizer.setMajorScale(0);
         break;
       case 'minor':
-        this.quantizer.setMinorScale(9); // A minor
+        this.quantizer.setMinorScale(9);
         break;
       case 'penta-maj':
-        this.quantizer.setPentatonicMajor(0); // C penta major
+        this.quantizer.setPentatonicMajor(0);
         break;
       case 'penta-min':
-        this.quantizer.setPentatonicMinor(9); // A penta minor
+        this.quantizer.setPentatonicMinor(9);
         break;
     }
 
-    // Update piano keyboard visual
     this.updatePianoKeyboard();
   }
 
@@ -501,7 +471,6 @@ class Phase4App {
   }
 
   syncUIWithParameters() {
-    // Update all parameter displays
     const params = [
       'jf1Time', 'jf1Intone', 'jf1Ramp', 'jf1Curve',
       'quantDepth', 'quantOffset',
@@ -517,25 +486,19 @@ class Phase4App {
       if (knob && display) {
         const value = parseFloat(knob.value);
         display.textContent = value.toFixed(2);
-      } else {
-        if (!knob) console.warn(`Knob not found: ${param}`);
-        if (!display) console.warn(`Display not found: ${param}Value`);
       }
     });
 
-    // Update piano keyboard to show C major (default)
     this.updatePianoKeyboard();
     
-    // Check FM enabled checkbox
     const fmEnable = document.getElementById('fmEnable');
     if (fmEnable) {
-      fmEnable.checked = true; // FM enabled by default now
+      fmEnable.checked = true;
     }
     
-    console.log('UI parameters synced - THROUGH-ZERO FM mode');
+    console.log('UI synced - FIXED FM system ready');
   }
 }
 
-// Initialize app when page loads
 const app = new Phase4App();
 window.addEventListener('load', () => app.init());
