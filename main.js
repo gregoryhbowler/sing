@@ -1,28 +1,28 @@
-// main.js - FIXED VERSION
-// Phase 4: Multi-Mangrove FM Architecture with Rich Timbres
-// 
-// CRITICAL FIX APPLIED: Mangrove impulse duration now calculated relative to period
-// This fixes the FM synthesis which was completely broken due to missed triggers
+// main.js - Phase 5: Three Sisters Filter Integration
 //
 // Signal flow:
 // JF #1 → Quantizer → Mangrove A (pitch CV)
-// Mangrove B SQUARE → Mangrove A FM (audio-rate through-zero FM)
-// Mangrove C (ready for filter FM in Phase 5)
+// Mangrove B FORMANT → Mangrove A FM (audio-rate through-zero FM)
+// Mangrove A FORMANT → Three Sisters audio input
+// Mangrove C FORMANT → Three Sisters FM input
+// Three Sisters ALL → Scope 2 → Master → Output
 
 import { JustFriendsNode } from './JustFriendsNode.js';
 import { QuantizerNode } from './QuantizerNode.js';
 import { MangroveNode } from './MangroveNode.js';
+import { ThreeSistersNode } from './ThreeSistersNode.js';
 
-class Phase4App {
+class Phase5App {
   constructor() {
     this.audioContext = null;
     
     // Modules
     this.jf1 = null;
     this.quantizer = null;
-    this.mangroveA = null;  // Main voice
-    this.mangroveB = null;  // FM source for A
-    this.mangroveC = null;  // FM source for filter (Phase 5)
+    this.mangroveA = null;
+    this.mangroveB = null;
+    this.mangroveC = null;
+    this.threeSisters = null;
     this.masterGain = null;
     
     // FM routing
@@ -51,10 +51,10 @@ class Phase4App {
       // Load AudioWorklet processors
       await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
       await this.audioContext.audioWorklet.addModule('./quantizer-processor.js');
-      await this.audioContext.audioWorklet.addModule('./mangrove-processor.js'); // ← FIXED VERSION
+      await this.audioContext.audioWorklet.addModule('./mangrove-processor.js');
+      await this.audioContext.audioWorklet.addModule('./three-sisters-processor.js');
       
-      console.log('%c✓ All AudioWorklets loaded - FIXED VERSION', 'color: green; font-weight: bold');
-      console.log('%cMangrove FM fix applied: impulse duration now scales with period', 'color: blue');
+      console.log('%c✓ All AudioWorklets loaded - Phase 5', 'color: green; font-weight: bold');
       
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
@@ -62,11 +62,12 @@ class Phase4App {
       this.mangroveA = new MangroveNode(this.audioContext);
       this.mangroveB = new MangroveNode(this.audioContext);
       this.mangroveC = new MangroveNode(this.audioContext);
+      this.threeSisters = new ThreeSistersNode(this.audioContext);
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = 0.3;
 
       this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 0.0;
+      this.fmGainB.gain.value = 0.0; // Start disabled
 
       this.setupScope1();
       this.setupScope2();
@@ -79,32 +80,35 @@ class Phase4App {
       this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
 
       // 2. Mangrove B FORMANT → FM Gain → Mangrove A FM input
-      // CRITICAL: Use FORMANT output (shaped by BARREL/FORMANT controls)
-      // NOT SQUARE output (raw square wave, harsh harmonics)
       this.mangroveB.getFormantOutput().connect(this.fmGainB);
       this.fmGainB.connect(this.mangroveA.getFMInput());
 
-      // 3. Mangrove A FORMANT → Scope 2 → Master → Output
-      this.mangroveA.getFormantOutput().connect(this.scope2Analyser);
+      // 3. Mangrove A FORMANT → Three Sisters audio input
+      this.mangroveA.getFormantOutput().connect(this.threeSisters.getAudioInput());
+
+      // 4. Mangrove C FORMANT → Three Sisters FM input
+      this.mangroveC.getFormantOutput().connect(this.threeSisters.getFMInput());
+
+      // 5. Three Sisters ALL output → Scope 2 → Master → Output
+      this.threeSisters.getAllOutput().connect(this.scope2Analyser);
       this.scope2Analyser.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
       
-      console.log('=== Phase 4 Signal Flow (FIXED v2) ===');
+      console.log('=== Phase 5 Signal Flow ===');
       console.log('JF #1 → Quantizer → Mangrove A pitch');
-      console.log('Mangrove B FORMANT → Mangrove A FM (timbral FM source)');
-      console.log('Mangrove A → Output (fixed impulse timing)');
-      console.log('');
-      console.log('IMPORTANT: B uses FORMANT output (shaped), not SQUARE (raw)');
-      console.log('This gives clean FM tones. Adjust B\'s BARREL for modulator timbre.');
+      console.log('Mangrove B FORMANT → Mangrove A FM');
+      console.log('Mangrove A FORMANT → Three Sisters audio input');
+      console.log('Mangrove C FORMANT → Three Sisters FM input');
+      console.log('Three Sisters ALL → Scope 2 → Master → Output');
+      
       this.configureDefaults();
       
-      document.getElementById('status').textContent = 'Ready - FM System (FIXED)';
+      document.getElementById('status').textContent = 'Ready - Filter System Active';
       document.getElementById('startBtn').disabled = false;
       
       this.syncUIWithParameters();
       
-      console.log('%c✓ System initialized - FM synthesis is now working!', 'color: green; font-weight: bold');
-      console.log('Expected: Rich, smooth FM timbres (not choppy/gated)');
+      console.log('%c✓ Phase 5 initialized - Three Sisters filter ready!', 'color: green; font-weight: bold');
       
     } catch (error) {
       console.error('Failed to initialize:', error);
@@ -126,30 +130,34 @@ class Phase4App {
     this.quantizer.setDepth(1.0);
     this.quantizer.setOffset(0);
 
-    // Mangrove A: Main voice with FM
+    // Mangrove A: Main voice
     this.mangroveA.setPitch(0.5);
-    this.mangroveA.setBarrel(0.3);  // Asymmetric for harmonics
-    this.mangroveA.setFormant(0.6); // Mid-range spectral focus
+    this.mangroveA.setBarrel(0.3);
+    this.mangroveA.setFormant(0.6);
     this.mangroveA.setAir(0.5);
-    this.mangroveA.setFMIndex(0.4); // Synthesis Index 2.0 - clean, musical FM
+    this.mangroveA.setFMIndex(0.3);
 
-    // Mangrove B: FM modulator with smooth waveform
-    this.mangroveB.setPitch(0.52); // Slightly detuned for chorus
-    this.mangroveB.setBarrel(0.65); // Slightly CW from noon = smoother, more sine-like
-    this.mangroveB.setFormant(0.55); // Slightly above noon = balanced spectrum
-    this.mangroveB.setAir(0.7); // Good output level for FM
+    // Mangrove B: FM modulator
+    this.mangroveB.setPitch(0.52);
+    this.mangroveB.setBarrel(0.65);
+    this.mangroveB.setFormant(0.55);
+    this.mangroveB.setAir(0.7);
 
-    // Mangrove C: Ready for Phase 5
+    // Mangrove C: Filter FM source
     this.mangroveC.setPitch(0.6);
     this.mangroveC.setBarrel(0.5);
     this.mangroveC.setFormant(0.5);
     this.mangroveC.setAir(0.8);
+
+    // Three Sisters: Default filter settings
+    this.threeSisters.setFreq(0.5);    // Mid-range cutoff
+    this.threeSisters.setSpan(0.5);    // Moderate spread
+    this.threeSisters.setQuality(0.5); // Neutral (no resonance)
+    this.threeSisters.setMode(0);      // Crossover mode
+    this.threeSisters.setFMDepth(0);   // No FM initially
     
-    console.log('Default settings:');
-    console.log('- FM Index: 0.4 (synthesis index 2.0 - clean FM)');
-    console.log('- Mangrove B BARREL: 0.65 (smooth waveform for modulator)');
-    console.log('- Using FORMANT output from B (not SQUARE!)');
-    console.log('- Barrel: 0.3, Formant: 0.6, Air: 0.5');
+    console.log('Default settings configured');
+    console.log('Three Sisters: CROSSOVER mode, neutral Q, moderate cutoff/span');
   }
 
   setupScope1() {
@@ -260,12 +268,9 @@ class Phase4App {
     this.startScope2();
     
     document.getElementById('startBtn').innerHTML = '<span class="btn-icon">⏸</span> Stop';
-    document.getElementById('status').textContent = 'Running - FM Active (FIXED)';
+    document.getElementById('status').textContent = 'Running - Filter Active';
     
-    console.log('%c▶ System running with FIXED FM synthesis v2', 'color: green; font-weight: bold');
-    console.log('You should hear clean, musical FM timbres');
-    const currentIndex = this.mangroveA.params.fmIndex.value;
-    console.log(`FM Index: ${currentIndex.toFixed(3)} (Synthesis: ${(currentIndex * 5).toFixed(1)})`);
+    console.log('%c▶ Phase 5 system running', 'color: green; font-weight: bold');
   }
 
   stop() {
@@ -297,10 +302,6 @@ class Phase4App {
     this.fmGainB.gain.linearRampToValueAtTime(enabled ? 1.0 : 0.0, now + 0.05);
     
     console.log(`FM B → A: ${enabled ? 'ENABLED' : 'DISABLED'}`);
-    if (enabled) {
-      const currentIndex = this.mangroveA.params.fmIndex.value;
-      console.log(`FM Index: ${currentIndex.toFixed(3)} (Synthesis: ${(currentIndex * 5).toFixed(1)})`);
-    }
   }
 
   setupUI() {
@@ -358,11 +359,7 @@ class Phase4App {
     this.bindKnob('maBarrel', (val) => this.mangroveA?.setBarrel(val));
     this.bindKnob('maFormant', (val) => this.mangroveA?.setFormant(val));
     this.bindKnob('maAir', (val) => this.mangroveA?.setAir(val));
-    this.bindKnob('maFmIndex', (val) => {
-      this.mangroveA?.setFMIndex(val);
-      const synthesisIndex = val * 5.0;
-      console.log(`FM Index: ${val.toFixed(3)} (Synthesis: ${synthesisIndex.toFixed(1)})`);
-    });
+    this.bindKnob('maFmIndex', (val) => this.mangroveA?.setFMIndex(val));
 
     // Mangrove B controls
     this.bindKnob('mbPitch', (val) => this.mangroveB?.setPitch(val));
@@ -370,17 +367,30 @@ class Phase4App {
     this.bindKnob('mbFormant', (val) => this.mangroveB?.setFormant(val));
 
     const fmEnable = document.getElementById('fmEnable');
-      if (fmEnable) {
-        fmEnable.checked = false;  // Start disabled
-        fmEnable.addEventListener('change', (e) => {
-      this.toggleFM(e.target.checked);  // This was missing!
-    });
-}
+    if (fmEnable) {
+      fmEnable.checked = false;
+      fmEnable.addEventListener('change', (e) => {
+        this.toggleFM(e.target.checked);
+      });
+    }
 
     // Mangrove C controls
     this.bindKnob('mcPitch', (val) => this.mangroveC?.setPitch(val));
     this.bindKnob('mcBarrel', (val) => this.mangroveC?.setBarrel(val));
     this.bindKnob('mcFormant', (val) => this.mangroveC?.setFormant(val));
+
+    // Three Sisters controls
+    this.bindKnob('tsFreq', (val) => this.threeSisters?.setFreq(val));
+    this.bindKnob('tsSpan', (val) => this.threeSisters?.setSpan(val));
+    this.bindKnob('tsQuality', (val) => this.threeSisters?.setQuality(val));
+    this.bindKnob('tsFmDepth', (val) => this.threeSisters?.setFMDepth(val));
+
+    const tsMode = document.getElementById('tsMode');
+    if (tsMode) {
+      tsMode.addEventListener('change', (e) => {
+        this.threeSisters?.setMode(parseFloat(e.target.value));
+      });
+    }
 
     this.bindKnob('masterVolume', (val) => {
       if (this.masterGain) this.masterGain.gain.value = val;
@@ -481,6 +491,7 @@ class Phase4App {
       'maPitch', 'maBarrel', 'maFormant', 'maAir', 'maFmIndex',
       'mbPitch', 'mbBarrel', 'mbFormant',
       'mcPitch', 'mcBarrel', 'mcFormant',
+      'tsFreq', 'tsSpan', 'tsQuality', 'tsFmDepth',
       'masterVolume'
     ];
 
@@ -500,9 +511,9 @@ class Phase4App {
       fmEnable.checked = false;
     }
     
-    console.log('UI synced - FIXED FM system ready');
+    console.log('UI synced - Phase 5 ready');
   }
 }
 
-const app = new Phase4App();
+const app = new Phase5App();
 window.addEventListener('load', () => app.init());
