@@ -66,7 +66,7 @@ class Phase4App {
       this.masterGain.gain.value = 0.3;
 
       this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 1.0;
+      this.fmGainB.gain.value = 0.0;
 
       this.setupScope1();
       this.setupScope2();
@@ -370,10 +370,8 @@ class Phase4App {
     this.bindKnob('mbFormant', (val) => this.mangroveB?.setFormant(val));
 
     const fmEnable = document.getElementById('fmEnable');
-    if (fmEnable) {
-      fmEnable.addEventListener('change', (e) => {
-        this.toggleFM(e.target.checked);
-      });
+      if (fmEnable) {
+      fmEnable.checked = false;  // Change from true to false
     }
 
     // Mangrove C controls
