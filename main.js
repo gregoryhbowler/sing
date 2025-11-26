@@ -1,7 +1,7 @@
 // main.js
-// Phase 4: Multi-Mangrove FM Architecture
+// Phase 4 ENHANCED: Multi-Mangrove FM Architecture with Rich Timbres
 // JF #1 → Quantizer → Mangrove A (pitch CV)
-// Mangrove B → Mangrove A (FM)
+// Mangrove B SQUARE → Mangrove A FM (audio-rate) — NOW WITH 20× DEEPER MODULATION
 // Mangrove C (ready for filter FM in Phase 5)
 
 import { JustFriendsNode } from './JustFriendsNode.js';
@@ -63,7 +63,7 @@ class Phase4App {
 
       // FM routing gain nodes
       this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 0.0; // Start with FM disabled
+      this.fmGainB.gain.value = 1.0; // Start with FM ENABLED for demonstration
 
       // Setup scope visualization
       this.setupScope1();
@@ -77,7 +77,6 @@ class Phase4App {
       this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
 
       // 2. Mangrove B SQUARE → FM Gain → Mangrove A FM input (AUDIO-RATE FM)
-      // Use SQUARE for continuous audio-rate signal, not FORMANT (which is impulses)
       this.mangroveB.getSquareOutput().connect(this.fmGainB);
       this.fmGainB.connect(this.mangroveA.getFMInput());
 
@@ -88,9 +87,9 @@ class Phase4App {
 
       // Note: Mangrove C runs independently, ready for Phase 5 filter FM
       
-      console.log('=== Phase 4 Signal Flow ===');
+      console.log('=== Phase 4 ENHANCED Signal Flow ===');
       console.log('JF #1 IDENTITY → Scope 1 → Quantizer → Mangrove A pitch');
-      console.log('Mangrove B SQUARE → Mangrove A FM input (audio-rate)');
+      console.log('Mangrove B SQUARE → Mangrove A FM input (20× depth increase!)');
       console.log('Mangrove A FORMANT → Scope 2 → Output');
       console.log('Mangrove C: Ready for filter FM (Phase 5)');
 
@@ -98,13 +97,14 @@ class Phase4App {
       this.configureDefaults();
       
       // Update UI
-      document.getElementById('status').textContent = 'Ready';
+      document.getElementById('status').textContent = 'Ready - FM Enhanced';
       document.getElementById('startBtn').disabled = false;
       
       // Sync UI with default values
       this.syncUIWithParameters();
       
-      console.log('Phase 4 system initialized successfully');
+      console.log('Phase 4 ENHANCED system initialized successfully');
+      console.log('FM Index now maps to 0-20 range for rich timbres');
       
     } catch (error) {
       console.error('Failed to initialize system:', error);
@@ -126,24 +126,29 @@ class Phase4App {
     this.quantizer.setDepth(1.0);
     this.quantizer.setOffset(0);
 
-    // Mangrove A: Main voice, mid-range settings, FM depth at 0.15
+    // Mangrove A: Main voice, FM depth increased to 0.25 (Index 5.0)
     this.mangroveA.setPitch(0.5);
     this.mangroveA.setBarrel(0.3);
     this.mangroveA.setFormant(0.6);
     this.mangroveA.setAir(0.5);
-    this.mangroveA.setFMIndex(0.15); // FM depth at 0.15 (moderate with new scaling)
+    this.mangroveA.setFMIndex(0.25); // NEW: Index 5.0 for complex tones
 
     // Mangrove B: FM source, slightly detuned for interesting FM
     this.mangroveB.setPitch(0.52); // Slightly higher than A
     this.mangroveB.setBarrel(0.5);
     this.mangroveB.setFormant(0.5);
-    this.mangroveB.setAir(0.8); // Higher level for stronger FM
+    this.mangroveB.setAir(0.8); // Higher level for stronger FM signal
 
-    // Mangrove C: Ready for Phase 5, slightly higher pitch
+    // Mangrove C: Ready for Phase 5
     this.mangroveC.setPitch(0.6);
     this.mangroveC.setBarrel(0.5);
     this.mangroveC.setFormant(0.5);
     this.mangroveC.setAir(0.8);
+    
+    console.log('Defaults configured with enhanced FM:');
+    console.log('- Mangrove A FM Index: 0.25 (synthesis index 5.0)');
+    console.log('- FM enabled by default');
+    console.log('- Expect rich, complex timbres with multiple sidebands');
   }
 
   setupScope1() {
@@ -265,12 +270,12 @@ class Phase4App {
     this.startScope2();
     
     document.getElementById('startBtn').innerHTML = '<span class="btn-icon">⏸</span> Stop';
-    document.getElementById('status').textContent = 'Running';
+    document.getElementById('status').textContent = 'Running - Enhanced FM Active';
     
-    console.log('Phase 4 system running');
-    console.log('- Mangrove A: Main voice (pitch modulated by quantizer)');
-    console.log('- Mangrove B SQUARE: FM modulating A at audio rate');
-    console.log('- Mangrove C: Ready for Phase 5');
+    console.log('Phase 4 ENHANCED system running');
+    console.log('Listen for rich, complex timbres with multiple sidebands');
+    console.log('Current FM Index:', this.mangroveA.params.fmIndex.value.toFixed(3),
+                '(Synthesis Index:', (this.mangroveA.params.fmIndex.value * 20).toFixed(1) + ')');
   }
 
   stop() {
@@ -303,6 +308,10 @@ class Phase4App {
     this.fmGainB.gain.linearRampToValueAtTime(enabled ? 1.0 : 0.0, now + 0.05);
     
     console.log(`FM B → A: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    if (enabled) {
+      const currentIndex = this.mangroveA.params.fmIndex.value;
+      console.log(`Current FM Index: ${currentIndex.toFixed(3)} (Synthesis Index: ${(currentIndex * 20).toFixed(1)})`);
+    }
   }
 
   setupUI() {
@@ -366,7 +375,12 @@ class Phase4App {
     this.bindKnob('maBarrel', (val) => this.mangroveA?.setBarrel(val));
     this.bindKnob('maFormant', (val) => this.mangroveA?.setFormant(val));
     this.bindKnob('maAir', (val) => this.mangroveA?.setAir(val));
-    this.bindKnob('maFmIndex', (val) => this.mangroveA?.setFMIndex(val));
+    this.bindKnob('maFmIndex', (val) => {
+      this.mangroveA?.setFMIndex(val);
+      // Log the actual FM synthesis index
+      const synthesisIndex = val * 20.0;
+      console.log(`FM Index updated: ${val.toFixed(3)} (Synthesis Index: ${synthesisIndex.toFixed(1)})`);
+    });
 
     // Mangrove B controls
     this.bindKnob('mbPitch', (val) => this.mangroveB?.setPitch(val));
@@ -511,7 +525,13 @@ class Phase4App {
     // Update piano keyboard to show C major (default)
     this.updatePianoKeyboard();
     
-    console.log('UI parameters synced');
+    // Check FM enabled checkbox
+    const fmEnable = document.getElementById('fmEnable');
+    if (fmEnable) {
+      fmEnable.checked = true; // FM enabled by default now
+    }
+    
+    console.log('UI parameters synced - FM ENHANCED mode');
   }
 }
 
