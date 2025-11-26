@@ -26,6 +26,10 @@ class ThreeSistersProcessor extends AudioWorkletProcessor {
     this.highSVF1 = this.createSVF();
     this.highSVF2 = this.createSVF();
     
+    // Debug counters
+    this.debugCounter = 0;
+    this.fmDebugCounter = 0;
+    
     console.log('Three Sisters processor initialized - EDGE MODE (chaos allowed) - FM INPUT FIXED');
   }
 
@@ -170,6 +174,14 @@ class ThreeSistersProcessor extends AudioWorkletProcessor {
   process(inputs, outputs, parameters) {
     const output = outputs[0];
     
+    // Debug: Check if FM input bus exists (only log once)
+    if (this.debugCounter === 0) {
+      console.log(`Three Sisters inputs: ${inputs.length} buses`);
+      console.log(`  Input 0 (audio): ${inputs[0] ? inputs[0].length + ' channels' : 'MISSING'}`);
+      console.log(`  Input 1 (FM): ${inputs[1] ? inputs[1].length + ' channels' : 'MISSING'}`);
+    }
+    this.debugCounter++;
+    
     // FIXED: Read from separate input busses, not channels of one input
     // With numberOfInputs: 2, we have:
     //   inputs[0] = audio input bus
@@ -194,13 +206,24 @@ class ThreeSistersProcessor extends AudioWorkletProcessor {
       const audioSample = audioIn[i];
       const fmSample = fmIn[i];
       
+      // Debug FM input periodically
+      if (i === 0) {
+        this.fmDebugCounter++;
+        if (this.fmDebugCounter % (this.sampleRate * 2) === 0) {
+          console.log(`FM Check: input=${fmSample.toFixed(4)}, atten=${fmAtten.toFixed(3)}, amount=${((fmAtten - 0.5) * 2.0).toFixed(3)}`);
+        }
+      }
+      
       // === FREQ CALCULATION ===
       let baseFreqHz = this.freqKnobToHz(freqKnob);
       
-      const fmAmount = (fmAtten - 0.5) * 2.0;
+      // fmAtten: 0.0 = full negative, 0.5 = off, 1.0 = full positive
+      const fmAmount = (fmAtten - 0.5) * 2.0; // Range: -1.0 to +1.0
       
-      // RESTORED: Full ±2V FM range for chaos potential
-      const fmVoltage = fmSample * fmAmount * 2.0;
+      // VERY AGGRESSIVE FM: ±5 octaves for maximum audibility
+      // With audio-rate modulation from Mangrove formant output (~±1.0),
+      // this will create dramatic filter sweeps
+      const fmVoltage = fmSample * fmAmount * 5.0;
       const fmMultiplier = Math.pow(2, fmVoltage);
       let modulatedFreq = baseFreqHz * fmMultiplier;
       
