@@ -150,14 +150,14 @@ class Phase5App {
     this.mangroveC.setAir(0.8);
 
     // Three Sisters: Default filter settings
-    this.threeSisters.setFreq(0.5);    // Mid-range cutoff
-    this.threeSisters.setSpan(0.5);    // Moderate spread
-    this.threeSisters.setQuality(0.5); // Neutral (no resonance)
-    this.threeSisters.setMode(0);      // Crossover mode
-    this.threeSisters.setFMDepth(0);   // No FM initially
+    this.threeSisters.setFreq(0.5);      // Mid-range cutoff (~500Hz)
+    this.threeSisters.setSpan(0.5);      // No spread (noon)
+    this.threeSisters.setQuality(0.5);   // Neutral Q (0.707, Butterworth)
+    this.threeSisters.setMode(0);        // Crossover mode
+    this.threeSisters.setFMAttenuverter(0.5); // FM off (noon position)
     
     console.log('Default settings configured');
-    console.log('Three Sisters: CROSSOVER mode, neutral Q, moderate cutoff/span');
+    console.log('Three Sisters: CROSSOVER mode, neutral Q=0.707, ~500Hz cutoff');
   }
 
   setupScope1() {
@@ -383,7 +383,7 @@ class Phase5App {
     this.bindKnob('tsFreq', (val) => this.threeSisters?.setFreq(val));
     this.bindKnob('tsSpan', (val) => this.threeSisters?.setSpan(val));
     this.bindKnob('tsQuality', (val) => this.threeSisters?.setQuality(val));
-    this.bindKnob('tsFmDepth', (val) => this.threeSisters?.setFMDepth(val));
+    this.bindKnob('tsFmAtten', (val) => this.threeSisters?.setFMAttenuverter(val));
 
     const tsMode = document.getElementById('tsMode');
     if (tsMode) {
@@ -491,7 +491,7 @@ class Phase5App {
       'maPitch', 'maBarrel', 'maFormant', 'maAir', 'maFmIndex',
       'mbPitch', 'mbBarrel', 'mbFormant',
       'mcPitch', 'mcBarrel', 'mcFormant',
-      'tsFreq', 'tsSpan', 'tsQuality', 'tsFmDepth',
+      'tsFreq', 'tsSpan', 'tsQuality', 'tsFmAtten',
       'masterVolume'
     ];
 
