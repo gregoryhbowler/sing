@@ -43,9 +43,12 @@ export class ThreeSistersNode extends AudioWorkletNode {
     this.audioInput = context.createGain();
     this.fmInput = context.createGain();
 
-    // Connect inputs to the processor
-    this.audioInput.connect(this, 0, 0);
-    this.fmInput.connect(this, 0, 1);
+    // FIXED: Connect to separate input busses (not channels)
+    // With numberOfInputs: 2, we have 2 input busses
+    // Syntax: source.connect(destination, outputIndex, inputIndex)
+    // Where inputIndex is the INPUT BUS index (0 or 1)
+    this.audioInput.connect(this, 0, 0);  // Connect to input bus 0
+    this.fmInput.connect(this, 0, 1);     // Connect to input bus 1
   }
 
   // ========== PARAMETER SETTERS ==========
