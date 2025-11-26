@@ -1,6 +1,6 @@
-/* styles.css - Mangrove Interface + Just Friends Osc Integration */
+/* styles.css - Updated with cleaner transpose sequencer */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* Soft pastel palette */
@@ -246,17 +246,46 @@ body {
   text-align: center;
 }
 
-/* Scale preset buttons */
-.scale-presets {
+/* Scale controls */
+.scale-controls {
   display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  margin-top: var(--space-md);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  align-items: center;
 }
 
-.preset-btn {
+.root-selector {
+  flex: 0 0 auto;
+}
+
+.root-selector label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+  text-transform: lowercase;
+}
+
+.root-selector select {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.scale-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--space-sm);
   flex: 1;
-  min-width: 100px;
+}
+
+.scale-btn {
   padding: var(--space-sm) var(--space-md);
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--border-light);
@@ -264,19 +293,23 @@ body {
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.7rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
-.preset-btn:hover {
+.scale-btn:hover {
   background: rgba(255, 255, 255, 0.8);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
 }
 
-.preset-btn.active {
+.scale-btn.active {
   background: var(--text-primary);
   color: white;
   border-color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(42, 42, 42, 0.2);
 }
 
 /* Piano keyboard */
@@ -331,20 +364,6 @@ body {
 
 .piano-key:hover {
   transform: translateY(-2px);
-}
-
-.keyboard-labels {
-  display: flex;
-  gap: 4px;
-  justify-content: center;
-  font-size: 0.65rem;
-  color: var(--text-dim);
-  margin-top: var(--space-sm);
-}
-
-.keyboard-labels span {
-  width: 60px;
-  text-align: center;
 }
 
 /* Action Button */
@@ -527,7 +546,6 @@ select:focus-visible {
 }
 
 /* FM Mode Toggle */
-
 .fm-toggle-section {
   padding-top: var(--space-md);
   border-top: 1px solid var(--border-light);
@@ -622,7 +640,6 @@ select:focus-visible {
 }
 
 /* JF Osc Triggers */
-
 .jfosc-triggers {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
@@ -664,7 +681,238 @@ select:focus-visible {
   box-shadow: 0 2px 8px rgba(126, 181, 214, 0.4);
 }
 
+/* ========== TRANSPOSE SEQUENCER ========== */
+
+.transpose-sequencer-panel {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, 
+    rgba(232, 213, 232, 0.6) 0%, 
+    rgba(212, 228, 247, 0.6) 100%);
+}
+
+.sequencer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.playback-controls {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.playback-mode-btn {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.playback-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.playback-mode-btn.active {
+  background: var(--text-primary);
+  color: white;
+  border-color: var(--text-primary);
+}
+
+#sequencerGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.seq-cell {
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  transition: all 0.2s ease;
+  min-height: 140px;
+}
+
+.seq-cell:hover {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--border-medium);
+}
+
+.seq-cell.active {
+  background: rgba(200, 220, 255, 0.7);
+  border-color: #7eb5d6;
+  box-shadow: 0 0 0 2px rgba(126, 181, 214, 0.2);
+}
+
+.seq-cell.current {
+  background: linear-gradient(135deg, #c49ac4 0%, #7eb5d6 100%);
+  border-color: #6b5b95;
+  box-shadow: 0 4px 16px rgba(107, 91, 149, 0.4);
+  animation: pulse-seq 1s ease-in-out infinite;
+}
+
+@keyframes pulse-seq {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.seq-cell.current * {
+  color: white !important;
+}
+
+.seq-cell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.seq-cell-number {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.seq-cell-toggle {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #7eb5d6;
+}
+
+.transpose-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  margin: var(--space-xs) 0;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transpose-value.positive {
+  color: #4a90a4;
+}
+
+.transpose-value.negative {
+  color: #c49ac4;
+}
+
+.transpose-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+  margin: var(--space-xs) 0;
+}
+
+.transpose-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.transpose-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.transpose-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.repeats-input {
+  width: 100%;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  margin-top: auto;
+}
+
+.repeats-input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(42, 42, 42, 0.1);
+}
+
+.repeats-input::before {
+  content: '×';
+  margin-right: 2px;
+  color: var(--text-dim);
+}
+
+.sequencer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
+.seq-action-btn {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.seq-action-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.seq-action-btn:active {
+  transform: translateY(0);
+}
+
 /* Responsive */
+@media (max-width: 1200px) {
+  #sequencerGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   body {
     padding: 15px;
@@ -699,6 +947,18 @@ select:focus-visible {
   
   .jfosc-mode-controls {
     grid-template-columns: 1fr;
+  }
+  
+  #sequencerGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .scale-controls {
+    flex-direction: column;
+  }
+  
+  .scale-presets {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
