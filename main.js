@@ -79,6 +79,7 @@ class Phase5App {
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
       this.jfOsc = new JustFriendsOscNode(this.audioContext);
+      await new Promise(resolve => setTimeout(resolve, 10));
       this.quantizer = new QuantizerNode(this.audioContext);
       this.mangroveA = new MangroveNode(this.audioContext);
       this.mangroveB = new MangroveNode(this.audioContext);
@@ -241,9 +242,15 @@ class Phase5App {
     this.jfOsc.setCycleSoundMode();
     this.jfOsc.setUnison();
     this.jfOsc.setTriangleWave();
-    this.jfOsc.params.time.value = 0.5;
-    this.jfOsc.params.fmIndex.value = 0;
-    this.jfOsc.params.run.value = 0;
+    if (this.jfOsc.params && this.jfOsc.params.time) {
+      this.jfOsc.params.time.value = 0.5;
+    }
+    if (this.jfOsc.params && this.jfOsc.params.fmIndex) {
+      this.jfOsc.params.fmIndex.value = 0;
+    }
+    if (this.jfOsc.params && this.jfOsc.params.run) {
+      this.jfOsc.params.run.value = 0;
+    }
     this.jfOsc.enableRunMode(false);
 
     // Quantizer: C major scale
@@ -400,17 +407,17 @@ class Phase5App {
 
   updateJFOscModeDisplay() {
     const modeBadge = document.getElementById('jfOscModeBadge');
-    if (!modeBadge) return;
+    if (!modeBadge || !this.jfOsc || !this.jfOsc.params) return;
+  
+    const mode = Math.round(this.jfOsc.params.mode?.value || 0);
+    const range = Math.round(this.jfOsc.params.range?.value || 0);
+    const runEnabled = (this.jfOsc.params.runEnabled?.value || 0) > 0.5;
     
-    const mode = Math.round(this.jfOsc.params.mode.value);
-    const range = Math.round(this.jfOsc.params.range.value);
-    const runEnabled = this.jfOsc.params.runEnabled.value > 0.5;
-    
-    const modeNames = ['transient', 'sustain', 'cycle'];
-    const rangeNames = ['shape', 'sound'];
-    const runModes = {
-      '0/0': 'SHIFT', '1/0': 'STRATA', '2/0': 'VOLLEY',
-      '0/1': 'SPILL', '1/1': 'PLUME', '2/1': 'FLOOM'
+      const modeNames = ['transient', 'sustain', 'cycle'];
+      const rangeNames = ['shape', 'sound'];
+      const runModes = {
+        '0/0': 'SHIFT', '1/0': 'STRATA', '2/0': 'VOLLEY',
+        '0/1': 'SPILL', '1/1': 'PLUME', '2/1': 'FLOOM'
     };
     
     if (runEnabled) {
@@ -828,23 +835,29 @@ class Phase5App {
 
     // JF Osc controls
     this.bindKnob('jfOscTime', (val) => {
-      if (this.jfOsc) this.jfOsc.params.time.value = val;
-    });
+      if (this.jfOsc && this.jfOsc.params && this.jfOsc.params.time) {
+              this.jfOsc.params.time.value = val;
+            }
     this.bindKnob('jfOscIntone', (val) => {
-      if (this.jfOsc) this.jfOsc.params.intone.value = val;
-    });
+      if (this.jfOsc && this.jfOsc.params && this.jfOsc.params.intone) {
+              this.jfOsc.params.time.value = val;
+            }
     this.bindKnob('jfOscRamp', (val) => {
-      if (this.jfOsc) this.jfOsc.params.ramp.value = val;
-    });
+      if (this.jfOsc && this.jfOsc.params && this.jfOsc.params.ramp) {
+              this.jfOsc.params.time.value = val;
+            }
     this.bindKnob('jfOscCurve', (val) => {
-      if (this.jfOsc) this.jfOsc.params.curve.value = val;
-    });
+      if (this.jfOsc && this.jfOsc.params && this.jfOsc.params.curve) {
+              this.jfOsc.params.time.value = val;
+            }
     this.bindKnob('jfOscFmIndex', (val) => {
-      if (this.jfOsc) this.jfOsc.params.fmIndex.value = val;
-    });
+      if (this.jfOsc && this.jfOsc.params && this.jfOsc.params.fmIndex) {
+              this.jfOsc.params.time.value = val;
+            }
     this.bindKnob('jfOscRun', (val) => {
-      if (this.jfOsc) this.jfOsc.params.run.value = val;
-    });
+      if (this.jfOsc && this.jfOsc.params && this.jfOsc.params.run) {
+              this.jfOsc.params.time.value = val;
+            }
 
     // JF Osc mode selection
     const jfOscMode = document.getElementById('jfOscMode');
