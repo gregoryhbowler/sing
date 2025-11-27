@@ -563,11 +563,11 @@ class JustFriendsProcessor extends AudioWorkletProcessor {
       let runValue = getParam('run');
       
       // Add CV inputs
-      const timeCV = timeCVChannel ? timeCVChannel[i] : 0;
-      const fmSignal = fmChannel ? fmChannel[i] : 0;
-      const intoneCV = intoneCVChannel ? intoneCVChannel[i] : 0;
-      const runCV = runCVChannel ? runCVChannel[i] : 0;
-      const rampCV = rampCVChannel ? rampCVChannel[i] : 0;
+      const timeCV = timeCVChannel ? timeCVChannel[i] * 5.0 : 0;
+      const fmSignal = fmChannel ? fmChannel[i] : 0;  // Audio-rate, keep as-is
+      const intoneCV = intoneCVChannel ? intoneCVChannel[i] * 5.0 : 0;
+      const runCV = runCVChannel ? runCVChannel[i] * 5.0 : 0;
+      const rampCV = rampCVChannel ? rampCVChannel[i] * 5.0 : 0;
       
       intone = Math.max(0, Math.min(1, intone + intoneCV * 0.1));
       ramp = Math.max(0, Math.min(1, ramp + rampCV * 0.1));
