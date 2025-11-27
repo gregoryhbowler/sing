@@ -93,21 +93,17 @@ this.isRunning = false;
       
       // Wait a bit to ensure all processors are fully registered
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
       this.jfOsc = new JustFriendsOscNode(this.audioContext);
       await new Promise(resolve => setTimeout(resolve, 10));
       this.transposeSeq = new TransposeSequencerNode(this.audioContext);
       this.quantizer = new QuantizerNode(this.audioContext);
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
+      
       // Create JF #1 → quantizer gain control
       this.jf1ToQuantGain = this.audioContext.createGain();
       this.jf1ToQuantGain.gain.value = 1.0; // Enabled in Normal mode
-
-      // Load AudioWorklet processors
-      await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
       
       this.mangroveA = new MangroveNode(this.audioContext);
       this.mangroveB = new MangroveNode(this.audioContext);
