@@ -1,5 +1,33 @@
 /* rene-styles.css */
 
+.mode-selector {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.header-mode-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.header-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.header-mode-btn.active {
+  background: linear-gradient(135deg, #c49ac4, #7eb5d6);
+  color: white;
+  border-color: #7eb5d6;
+}
+
 /* René Mode Panel */
 .rene-mode-panel {
   grid-column: 1 / -1;
