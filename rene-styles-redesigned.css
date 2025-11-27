@@ -1,0 +1,647 @@
+/* rene-styles-redesigned.css - Clean Grid Aesthetic */
+
+/* Mode Selector in Header */
+.mode-selector {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.header-mode-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.header-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.header-mode-btn.active {
+  background: linear-gradient(135deg, #c49ac4, #7eb5d6);
+  color: white;
+  border-color: #7eb5d6;
+}
+
+/* René Mode Panel - Main Container */
+.rene-mode-panel {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, 
+    rgba(240, 240, 245, 0.7) 0%, 
+    rgba(245, 240, 245, 0.7) 100%);
+  padding: var(--space-xl);
+}
+
+/* Header with Title and Tabs */
+.rene-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Tabs - Centered in Header */
+.rene-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+}
+
+.rene-tab {
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+  min-width: 80px;
+  text-align: center;
+}
+
+.rene-tab:hover {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--border-medium);
+}
+
+.rene-tab.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: white;
+}
+
+/* Transport Controls in Header */
+.transport-controls-header {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.transport-btn-mini {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transport-btn-mini:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--border-medium);
+}
+
+.transport-btn-mini:active {
+  transform: scale(0.95);
+}
+
+/* Main Content Layout */
+.rene-main-content {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--space-xl);
+}
+
+/* Lane Container */
+.rene-lane {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* René Grid (4x4 layout like screenshot) */
+.rene-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Rotary-Style Knob Cell */
+.rene-knob-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.rene-knob-cell:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.rene-knob-cell.current {
+  background: linear-gradient(135deg, #c49ac4, #7eb5d6);
+  border-color: #6b5b95;
+  box-shadow: 0 4px 16px rgba(107, 91, 149, 0.4);
+}
+
+.rene-knob-cell.current .knob-label,
+.rene-knob-cell.current .knob-value {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Label at top */
+.knob-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Rotary knob container */
+.knob-rotary {
+  width: 70px;
+  height: 70px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Knob background circle */
+.knob-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(240, 240, 240, 1), rgba(220, 220, 220, 1));
+  box-shadow: 
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.8),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Knob indicator */
+.knob-indicator {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 3px;
+  height: 20px;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transform-origin: center calc(100% + 27px);
+  transform: translateX(-50%) rotate(0deg);
+  transition: transform 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Value display below knob */
+.knob-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Hidden range input for interaction */
+.rene-knob-input {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  z-index: 10;
+}
+
+.rene-knob-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 70px;
+  height: 70px;
+  cursor: pointer;
+}
+
+/* Gate Cell - Square Toggle Button */
+.gate-toggle-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.gate-toggle-cell:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.gate-toggle-cell.current {
+  border-color: #6b5b95;
+  box-shadow: 0 4px 16px rgba(107, 91, 149, 0.3);
+}
+
+/* Square toggle button */
+.gate-button {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  background: rgba(200, 200, 200, 0.5);
+  border: 2px solid var(--border-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: transparent;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gate-toggle-cell.active .gate-button {
+  background: linear-gradient(135deg, #8dc49a, #7eb5d6);
+  border-color: #8dc49a;
+  color: white;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    0 2px 8px rgba(141, 196, 154, 0.4);
+}
+
+.gate-button::after {
+  content: '■';
+}
+
+.gate-toggle-cell.active .gate-button::after {
+  content: '▪';
+}
+
+/* Hidden checkbox */
+.gate-checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Control Panel (Right Side) */
+.rene-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.control-group {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+}
+
+.control-group-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Dropdown-style selects */
+.control-select {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-select:hover {
+  border-color: var(--border-medium);
+  background: white;
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(42, 42, 42, 0.1);
+}
+
+/* Slider controls */
+.control-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.control-slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.control-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.control-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.control-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Mode Toggle Buttons */
+.mode-toggle-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.mode-toggle-option {
+  padding: var(--space-sm);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-toggle-option:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.mode-toggle-option.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: white;
+}
+
+/* Step Enable Grid */
+.step-enable-section {
+  margin-top: var(--space-lg);
+}
+
+.step-enable-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+}
+
+.step-enable-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.step-enable-cell:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.step-enable-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #6b5b95;
+}
+
+/* Mod Target Controls */
+.mod-target-section {
+  background: rgba(220, 255, 220, 0.3);
+  border: 1px solid rgba(140, 196, 154, 0.3);
+}
+
+/* Envelope Panel */
+.envelope-panel {
+  background: linear-gradient(135deg, 
+    rgba(255, 245, 235, 0.6) 0%, 
+    rgba(245, 235, 255, 0.6) 100%);
+}
+
+.envelope-mode-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.env-mode-btn,
+.curve-btn {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.env-mode-btn:hover,
+.curve-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.env-mode-btn.active,
+.curve-btn.active {
+  background: linear-gradient(135deg, #f7e4d4, #e8d5e8);
+  border-color: #c49ac4;
+  box-shadow: 0 2px 8px rgba(196, 154, 196, 0.3);
+}
+
+/* Transport Buttons */
+.transport-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+}
+
+.transport-btn {
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.transport-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.transport-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .rene-main-content {
+    grid-template-columns: 1fr 240px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .rene-main-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .rene-control-panel {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .rene-header {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  
+  .rene-tabs {
+    order: 2;
+  }
+  
+  .transport-controls-header {
+    order: 3;
+    justify-content: center;
+  }
+  
+  .rene-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .rene-control-panel {
+    grid-template-columns: 1fr;
+  }
+  
+  .step-enable-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .rene-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+  
+  .knob-rotary {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .gate-button {
+    width: 50px;
+    height: 50px;
+  }
+}
