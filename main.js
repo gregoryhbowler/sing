@@ -1,12 +1,5 @@
-// main.js - Phase 5 + Modulation Matrix + Just Friends Oscillator Integration + Transpose Sequencer
-//
-// Signal flow with oscillator selection:
-// JF #1 IDENTITY → Transpose Sequencer → Quantizer transpose parameter
-// JF #1 IDENTITY → Scope 1 → Quantizer → [Mangrove A OR Just Friends Osc] → Three Sisters
-// JF #1 (2N-6N) → Modulation Matrix → [27 destinations]
-// Mangrove B FORMANT → [Exponential FM OR Linear FM] → Selected Oscillator
-// Mangrove C FORMANT → Three Sisters FM input
-// Three Sisters ALL → Scope 2 → Master → Output
+// main.js - Phase 5 + René Mode Integration
+// Complete version with René CV routing
 
 import { JustFriendsNode } from './JustFriendsNode.js';
 import { JustFriendsOscNode } from './JustFriendsOscNode.js';
@@ -15,7 +8,7 @@ import { TransposeSequencerNode } from './TransposeSequencerNode.js';
 import { MangroveNode } from './MangroveNode.js';
 import { ThreeSistersNode } from './ThreeSistersNode.js';
 import { ModulationMatrixNode } from './outputs/ModulationMatrixNode.js';
-import { initReneMode, toggleReneMode, reneSequencer, envelopeVCA } from './rene-integration.js';
+import { initReneMode, toggleReneMode } from './rene-integration.js';
 
 class Phase5App {
   constructor() {
@@ -28,10 +21,9 @@ class Phase5App {
     this.mangroveA = null;
     this.mangroveB = null;
     this.mangroveC = null;
-    this.jfOsc = null; // Full Just Friends oscillator
+    this.jfOsc = null;
     this.threeSisters = null;
     this.masterGain = null;
-    this.renePitchGain = null;
     
     // Modulation matrix
     this.modMatrix = null;
@@ -39,13 +31,13 @@ class Phase5App {
     this.jfMerger = null;
     
     // Oscillator selection state
-    this.activeOscillator = 'mangrove'; // 'mangrove' or 'justfriends'
+    this.activeOscillator = 'mangrove';
     
     // FM routing
     this.fmGainB = null;
-    this.fmExpGain = null; // For exponential FM (to TIME CV)
-    this.fmLinGain = null; // For linear FM (to FM INPUT)
-    this.fmMode = 'exponential'; // 'exponential' or 'linear'
+    this.fmExpGain = null;
+    this.fmLinGain = null;
+    this.fmMode = 'exponential';
     
     // Crossfade gains for oscillator switching
     this.mangroveAGain = null;
@@ -53,6 +45,10 @@ class Phase5App {
     
     // Transpose sequencer to quantizer connection
     this.transposeGain = null;
+    
+    // René CV routing node
+    this.renePitchGain = null;
+    this.renePitchSource = null;
     
     this.isRunning = false;
 
@@ -84,7 +80,7 @@ class Phase5App {
       await this.audioContext.audioWorklet.addModule('./modulation-matrix-processor.js');
       await this.audioContext.audioWorklet.addModule('./envelope-processor.js');
       
-      console.log('%c✓ All AudioWorklets loaded - Phase 5 + JF Osc Integration + Transpose Sequencer', 'color: green; font-weight: bold');
+      console.log('%c✓ All AudioWorklets loaded - Phase 5 + René Mode', 'color: green; font-weight: bold');
       
       // Create module instances
       this.jf1 = new JustFriendsNode(this.audioContext);
@@ -92,9 +88,6 @@ class Phase5App {
       await new Promise(resolve => setTimeout(resolve, 10));
       this.transposeSeq = new TransposeSequencerNode(this.audioContext);
       this.quantizer = new QuantizerNode(this.audioContext);
-      this.renePitchGain = this.audioContext.createGain();
-      this.renePitchGain.gain.value = 0; // Start silent
-      this.renePitchGain.connect(this.quantizer.getInput());
       this.mangroveA = new MangroveNode(this.audioContext);
       this.mangroveB = new MangroveNode(this.audioContext);
       this.mangroveC = new MangroveNode(this.audioContext);
@@ -105,21 +98,30 @@ class Phase5App {
 
       // Create crossfade gains
       this.mangroveAGain = this.audioContext.createGain();
-      this.mangroveAGain.gain.value = 1.0; // Start with Mangrove
+      this.mangroveAGain.gain.value = 1.0;
       this.jfOscGain = this.audioContext.createGain();
-      this.jfOscGain.gain.value = 0.0; // JF Osc starts silent
+      this.jfOscGain.gain.value = 0.0;
 
       // Create FM routing gains
       this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 0.0; // Start disabled
+      this.fmGainB.gain.value = 0.0;
       this.fmExpGain = this.audioContext.createGain();
-      this.fmExpGain.gain.value = 0.3; // Default exponential depth
+      this.fmExpGain.gain.value = 0.3;
       this.fmLinGain = this.audioContext.createGain();
-      this.fmLinGain.gain.value = 1.0; // Pass-through for linear
+      this.fmLinGain.gain.value = 1.0;
 
       // Create transpose gain for sequencer → quantizer
       this.transposeGain = this.audioContext.createGain();
-      this.transposeGain.gain.value = 12.0; // Convert from voltage back to semitones
+      this.transposeGain.gain.value = 12.0;
+
+      // Create René pitch CV routing
+      this.renePitchGain = this.audioContext.createGain();
+      this.renePitchGain.gain.value = 0; // Start disabled (Normal mode)
+      
+      // Create a constant source for René pitch modulation
+      this.renePitchSource = this.audioContext.createConstantSource();
+      this.renePitchSource.offset.value = 0;
+      this.renePitchSource.start();
 
       this.setupScope1();
       this.setupScope2();
@@ -134,43 +136,41 @@ class Phase5App {
       this.scope1Analyser.connect(this.quantizer.getInput());
 
       // 3. Transpose Sequencer → Quantizer transpose parameter
-      // The sequencer outputs voltage (semitones/12), we need to convert back to semitones
       this.transposeSeq.getTransposeOutput().connect(this.transposeGain);
       this.transposeGain.connect(this.quantizer.params.transpose);
 
-      // 4. Quantizer → Both Mangrove A and JF Osc (both always get pitch CV)
+      // 4. René pitch CV routing → Quantizer input
+      this.renePitchSource.connect(this.renePitchGain);
+      this.renePitchGain.connect(this.quantizer.getInput());
+
+      // 5. Quantizer → Both Mangrove A and JF Osc
       this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
       this.quantizer.getOutput().connect(this.jfOsc.getTimeCVInput());
 
-      // 5. Mangrove B FORMANT → FM routing
+      // 6. Mangrove B FORMANT → FM routing
       this.mangroveB.getFormantOutput().connect(this.fmGainB);
-      
-      // Exponential path: FM → fmExpGain → Mangrove A pitch / JF Osc TIME CV
       this.fmGainB.connect(this.fmExpGain);
       this.fmExpGain.connect(this.mangroveA.getPitchCVInput());
       this.fmExpGain.connect(this.jfOsc.getTimeCVInput());
-      
-      // Linear path: FM → fmLinGain → Mangrove A FM / JF Osc FM
       this.fmGainB.connect(this.fmLinGain);
       this.fmLinGain.connect(this.mangroveA.getFMInput());
       this.fmLinGain.connect(this.jfOsc.getFMInput());
 
-      // 6. Oscillator outputs → Crossfade → Three Sisters
+      // 7. Oscillator outputs → Crossfade → Three Sisters
       this.mangroveA.getFormantOutput().connect(this.mangroveAGain);
       this.jfOsc.getMixOutput().connect(this.jfOscGain);
-      
       this.mangroveAGain.connect(this.threeSisters.getAudioInput());
       this.jfOscGain.connect(this.threeSisters.getAudioInput());
 
-      // 7. Mangrove C FORMANT → Three Sisters FM input
+      // 8. Mangrove C FORMANT → Three Sisters FM input
       this.mangroveC.getFormantOutput().connect(this.threeSisters.getFMInput());
 
-      // 8. Three Sisters ALL output → Scope 2 → Master → Output
+      // 9. Three Sisters ALL output → Scope 2 → Master → Output
       this.threeSisters.getAllOutput().connect(this.scope2Analyser);
       this.scope2Analyser.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
       
-      // 9. JF slopes 2N-6N → Modulation Matrix
+      // 10. JF slopes 2N-6N → Modulation Matrix
       this.jfMerger = this.audioContext.createChannelMerger(5);
       this.jf1.get2NOutput().connect(this.jfMerger, 0, 0);
       this.jf1.get3NOutput().connect(this.jfMerger, 0, 1);
@@ -179,16 +179,16 @@ class Phase5App {
       this.jf1.get6NOutput().connect(this.jfMerger, 0, 4);
       this.jfMerger.connect(this.modMatrix.getInput());
       
-      console.log('=== Phase 5 + JF Osc Integration + Transpose Sequencer ===');
-      console.log('JF #1 IDENTITY → Transpose Sequencer → Quantizer transpose');
-      console.log('JF #1 IDENTITY → Quantizer → [Mangrove A OR JF Osc] → Three Sisters');
-      console.log('Mangrove B → [Exponential OR Linear FM] → Active Oscillator');
-      console.log('Mangrove C → Three Sisters FM');
+      console.log('=== Phase 5 + René Mode ===');
+      console.log('Signal routing complete');
       
       // Build destination map for modulation matrix
       this.buildDestinationMap();
       
       this.configureDefaults();
+      
+      // Initialize René mode
+      await initReneMode(this);
       
       // Listen for step changes from transpose sequencer
       this.transposeSeq.addEventListener('step-changed', (e) => {
@@ -200,7 +200,7 @@ class Phase5App {
       
       this.syncUIWithParameters();
       
-      console.log('%c✓ Phase 5 + Transpose Sequencer initialized!', 'color: green; font-weight: bold');
+      console.log('%c✓ Phase 5 + René Mode initialized!', 'color: green; font-weight: bold');
       
     } catch (error) {
       console.error('Failed to initialize:', error);
@@ -327,7 +327,7 @@ class Phase5App {
     
     this.activeOscillator = osc;
     const now = this.audioContext.currentTime;
-    const fadeTime = 0.05; // 50ms crossfade
+    const fadeTime = 0.05;
     
     if (osc === 'mangrove') {
       this.mangroveAGain.gain.cancelScheduledValues(now);
@@ -750,7 +750,6 @@ class Phase5App {
         const cell = document.querySelector(`.seq-cell[data-step="${step}"]`);
         cell.classList.toggle('active', active);
         
-        // Update transpose sequencer
         if (this.transposeSeq) {
           this.transposeSeq.setCell(step, { active });
         }
@@ -769,7 +768,6 @@ class Phase5App {
         if (transpose > 0) valueDisplay.classList.add('positive');
         if (transpose < 0) valueDisplay.classList.add('negative');
         
-        // Update transpose sequencer
         if (this.transposeSeq) {
           this.transposeSeq.setCell(step, { transpose });
         }
@@ -784,7 +782,6 @@ class Phase5App {
         repeats = Math.max(1, Math.min(64, repeats));
         e.target.value = repeats;
         
-        // Update transpose sequencer
         if (this.transposeSeq) {
           this.transposeSeq.setCell(step, { repeats });
         }
@@ -849,7 +846,6 @@ class Phase5App {
   }
 
   updateSequencerUI(step, transpose) {
-    // Update current step indicator
     document.querySelectorAll('.seq-cell').forEach(cell => {
       cell.classList.remove('current');
     });
@@ -936,14 +932,13 @@ class Phase5App {
     console.log(`Mod slot ${slot} → ${destination}`);
   }
 
-  // ========== SCALE SELECTION (UNIFIED) ==========
+  // ========== SCALE SELECTION ==========
 
   setScale(scaleName, root = 0) {
     if (!this.quantizer) return;
 
     console.log(`Setting scale: ${scaleName}, root: ${root}`);
 
-    // Map scale name to quantizer method
     switch (scaleName) {
       case 'chromatic':
         this.quantizer.setChromatic();
@@ -992,7 +987,6 @@ class Phase5App {
         break;
     }
 
-    // Update piano keyboard to reflect the scale
     this.updatePianoKeyboard();
   }
 
@@ -1144,7 +1138,7 @@ class Phase5App {
     this.bindKnob('quantDepth', (val) => this.quantizer?.setDepth(val));
     this.bindKnob('quantOffset', (val) => this.quantizer?.setOffset(val));
 
-    // Unified scale selection
+    // Scale selection
     const rootSelect = document.getElementById('rootNote');
     if (rootSelect) {
       rootSelect.addEventListener('change', () => {
@@ -1168,7 +1162,7 @@ class Phase5App {
       });
     });
 
-    // Piano keyboard - make keys toggleable but they also reflect the scale
+    // Piano keyboard
     this.createPianoKeyboard();
 
     // Mangrove A controls
@@ -1232,7 +1226,7 @@ class Phase5App {
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const isBlackKey = [false, true, false, true, false, false, true, false, true, false, true, false];
 
-    container.innerHTML = ''; // Clear existing
+    container.innerHTML = '';
 
     for (let i = 0; i < 12; i++) {
       const key = document.createElement('div');
@@ -1280,7 +1274,6 @@ class Phase5App {
       fmEnable.checked = false;
     }
     
-    // Set default scale button as active
     const majorBtn = document.querySelector('.scale-btn[data-scale="major"]');
     if (majorBtn) {
       majorBtn.classList.add('active');
