@@ -1,6 +1,5 @@
-// rene-integration.js
-// Integration code for René mode
-// Add this to main.js or import it
+// rene-integration.js - COMPLETE with CV routing
+// Integration code for René mode with proper pitch CV routing
 
 import { ReneSequencer } from './ReneSequencer.js';
 import { EnvelopeVCANode } from './EnvelopeVCANode.js';
@@ -21,9 +20,6 @@ let currentSteps = { note: 0, gate: 0, mod: 0 };
 export async function initReneMode(app) {
   console.log('Initializing René mode...');
   
-  // Load envelope processor
-  await app.audioContext.audioWorklet.addModule('./envelope-processor.js');
-  
   // Create envelope/VCA
   envelopeVCA = new EnvelopeVCANode(app.audioContext);
   
@@ -34,18 +30,19 @@ export async function initReneMode(app) {
   envelopeVCA.setDecay(0.5);
   envelopeVCA.setSustain(0.7);
   
-  // Create René sequencer
+  // Create René sequencer with callbacks
   reneSequencer = new ReneSequencer({
     audioContext: app.audioContext,
     onNote: ({ value, time, step }) => {
-      // Convert 0-1 value to pitch CV
-      // Feed into existing quantizer
-      const voltage = value * 4.0; // 0-4V range
-      const normalized = voltage / 5.0; // Normalize for Web Audio
+      // Convert 0-1 value to pitch CV and route through renePitchSource
+      // René outputs 0-1, we want 0-4V range (4 octaves)
+      const voltage = value * 4.0; // 0-4V
+      const normalized = voltage / 5.0; // Normalize for Web Audio (0-0.8)
       
-      // This would normally be sent to quantizer input
-      // For now, we'll update it directly via parameter
-      // In full integration, route through a gain node to quantizer input
+      // Set the constant source value (this will be mixed with JF #1 in quantizer input)
+      if (app.renePitchSource) {
+        app.renePitchSource.offset.setValueAtTime(normalized, time);
+      }
       
       // Update UI
       updateCurrentStepUI('note', step);
@@ -126,6 +123,14 @@ export function toggleReneMode(app, enabled) {
  * Enable René signal routing
  */
 function enableReneRouting(app) {
+  // Enable René pitch CV routing
+  const now = app.audioContext.currentTime;
+  if (app.renePitchGain) {
+    app.renePitchGain.gain.cancelScheduledValues(now);
+    app.renePitchGain.gain.setValueAtTime(app.renePitchGain.gain.value, now);
+    app.renePitchGain.gain.linearRampToValueAtTime(1.0, now + 0.05);
+  }
+  
   // Insert envelope/VCA into signal path
   // Normal path: Oscillator → Three Sisters
   // René path: Oscillator → Envelope VCA → Three Sisters
@@ -139,13 +144,26 @@ function enableReneRouting(app) {
   app.jfOscGain.connect(envelopeVCA.getInput());
   envelopeVCA.getOutput().connect(app.threeSisters.getAudioInput());
   
-  console.log('✓ René routing enabled');
+  console.log('✓ René routing enabled (CV + envelope)');
 }
 
 /**
  * Disable René signal routing
  */
 function disableReneRouting(app) {
+  // Disable René pitch CV routing
+  const now = app.audioContext.currentTime;
+  if (app.renePitchGain) {
+    app.renePitchGain.gain.cancelScheduledValues(now);
+    app.renePitchGain.gain.setValueAtTime(app.renePitchGain.gain.value, now);
+    app.renePitchGain.gain.linearRampToValueAtTime(0, now + 0.05);
+  }
+  
+  // Reset René pitch source to 0
+  if (app.renePitchSource) {
+    app.renePitchSource.offset.setValueAtTime(0, now);
+  }
+  
   // Restore normal routing
   app.mangroveAGain.disconnect();
   app.jfOscGain.disconnect();
