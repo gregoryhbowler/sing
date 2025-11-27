@@ -52,9 +52,14 @@ class Phase5App {
     
     this.isRunning = false;
 
-     // Create gain node to control JF #1 → quantizer connection
-     this.jf1ToQuantGain = this.audioContext.createGain();
-     this.jf1ToQuantGain.gain.value = 1.0; // Enabled in Normal m
+     // René CV routing node
+this.renePitchGain = null;
+this.renePitchSource = null;
+
+// JF #1 to quantizer routing
+this.jf1ToQuantGain = null;
+
+this.isRunning = false;
 
     // Scope visualization
     this.scope1Analyser = null;
@@ -92,6 +97,15 @@ class Phase5App {
       await new Promise(resolve => setTimeout(resolve, 10));
       this.transposeSeq = new TransposeSequencerNode(this.audioContext);
       this.quantizer = new QuantizerNode(this.audioContext);
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create JF #1 → quantizer gain control
+      this.jf1ToQuantGain = this.audioContext.createGain();
+      this.jf1ToQuantGain.gain.value = 1.0; // Enabled in Normal mode
+
+      // Load AudioWorklet processors
+      await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
+      
       this.mangroveA = new MangroveNode(this.audioContext);
       this.mangroveB = new MangroveNode(this.audioContext);
       this.mangroveC = new MangroveNode(this.audioContext);
