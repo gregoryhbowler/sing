@@ -28,11 +28,16 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
     this.gateOn = false;
     this.scheduledEvents = [];
     
+    // Time tracking for scheduled events
+    this.samplesSinceStart = 0;
+    
     // Listen for gate events from main thread
     this.port.onmessage = (event) => {
       if (event.data.type === 'gate') {
+        // Convert absolute AudioContext time to sample-relative time
+        const eventSampleTime = Math.floor(event.data.time * sampleRate);
         this.scheduledEvents.push({
-          time: event.data.time,
+          sampleTime: eventSampleTime,
           isOn: event.data.isOn
         });
       }
@@ -205,18 +210,25 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
     const curve = parameters.curve[0];
     
     // Process scheduled gate events
-    const currentTime = currentFrame / sampleRate;
-    this.scheduledEvents = this.scheduledEvents.filter(event => {
-      if (event.time <= currentTime) {
+    // Filter and process events that should trigger now
+    const currentSampleTime = this.samplesSinceStart;
+    const newScheduledEvents = [];
+    
+    for (const event of this.scheduledEvents) {
+      if (event.sampleTime <= currentSampleTime) {
+        // Process this event
         if (event.isOn) {
           this.triggerGateOn(mode, attack, sampleRate);
         } else {
           this.triggerGateOff(mode, decay, sustain, sampleRate);
         }
-        return false; // Remove processed event
+      } else {
+        // Keep future events
+        newScheduledEvents.push(event);
       }
-      return true; // Keep future events
-    });
+    }
+    
+    this.scheduledEvents = newScheduledEvents;
     
     // Process each sample
     for (let i = 0; i < audioIn.length; i++) {
@@ -227,6 +239,7 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
       audioOut[i] = audioIn[i] * envValue;
       
       this.debugCounter++;
+      this.samplesSinceStart++;
     }
     
     // Debug logging
@@ -238,7 +251,8 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
         curve: curve < 0.5 ? 'linear' : 'exponential',
         attack: attack.toFixed(3),
         decay: decay.toFixed(3),
-        sustain: sustain.toFixed(2)
+        sustain: sustain.toFixed(2),
+        gateOn: this.gateOn
       });
       this.debugCounter = 0;
     }
