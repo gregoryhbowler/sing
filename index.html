@@ -6,8 +6,8 @@
   <title>Phase 5 - Transpose Sequencer</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="mod-matrix-styles.css">
-  <link rel="stylsheet" href="transpose-sequencer-styles.css">
-  <link rel="stylsheet" href="rene-styles-redesigned.css">
+  <link rel="stylesheet" href="transpose-sequencer-styles.css">
+  <link rel="stylesheet" href="rene-styles-redesigned.css">
 </head>
 <body>
   <div class="header">
@@ -21,8 +21,6 @@
     </div>
   </div>
   <div class="status-display" id="status">Initializing...</div>
-    <div class="status-display" id="status">Initializing...</div>
-  </div>
 
   <div class="main-container">
 
@@ -326,7 +324,7 @@
   
 </div>
 
-<!-- Envelope Panel (separate, shown when René mode is active) -->
+<!-- Envelope Panel (SINGLE INSTANCE - FIXED) -->
 <div class="panel-section envelope-panel" id="envelopePanel" style="display: none;">
   <h2 class="section-title">envelope + vca</h2>
   
@@ -337,41 +335,6 @@
     </div>
     
     <div class="mode-toggle-group">
-      <button class="curve-btn" data-curve="linear">Linear</button>
-      <button class="curve-btn active" data-curve="exponential">Exponential</button>
-    </div>
-  </div>
-  
-  <div class="param-row">
-    <label>attack</label>
-    <input type="range" id="envAttack" min="0.001" max="3" step="0.001" value="0.03">
-    <span class="param-value" id="envAttackValue">0.030</span>
-  </div>
-  
-  <div class="param-row">
-    <label>decay/release</label>
-    <input type="range" id="envDecay" min="0.005" max="10" step="0.005" value="0.5">
-    <span class="param-value" id="envDecayValue">0.500</span>
-  </div>
-  
-  <div class="param-row">
-    <label>sustain</label>
-    <input type="range" id="envSustain" min="0" max="1" step="0.01" value="0.7">
-    <span class="param-value" id="envSustainValue">0.70</span>
-  </div>
-</div>
-
-<!-- Envelope Panel -->
-<div class="panel-section envelope-panel" id="envelopePanel" style="display: none;">
-  <h2 class="section-title">envelope + vca</h2>
-  
-  <div class="envelope-mode-controls">
-    <div class="mode-toggle-group">
-      <button class="env-mode-btn" data-mode="AD">AD</button>
-      <button class="env-mode-btn active" data-mode="ASR">ASR</button>
-    </div>
-    
-    <div class="curve-toggle-group">
       <button class="curve-btn" data-curve="linear">Linear</button>
       <button class="curve-btn active" data-curve="exponential">Exponential</button>
     </div>
