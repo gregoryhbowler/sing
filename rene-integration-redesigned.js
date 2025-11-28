@@ -1,7 +1,8 @@
-// rene-integration-redesigned.js
-// Integration code for René mode with enhanced rotary knob UI
+// rene-integration-upgraded.js
+// UPGRADED Integration for René with 4 mod lanes and pattern system
 
 import { ReneSequencer } from './ReneSequencer.js';
+import { RenePatternSystem } from './RenePatternSystem.js';
 import { EnvelopeVCANode } from './EnvelopeVCANode.js';
 import { 
   initializeEnhancedReneUI, 
@@ -12,15 +13,18 @@ import {
 // René mode state and components
 let reneMode = false;
 let reneSequencer = null;
+let renePatternSystem = null;
 let envelopeVCA = null;
-let modDestinationParam = null;
-let modDepthValue = 0.5;
+
+// UPGRADED: 4 mod destinations
+let modDestinations = [null, null, null, null];
+let modDepths = [0.5, 0.5, 0.5, 0.5];
 
 /**
- * Initialize René mode
+ * Initialize René mode with pattern system
  */
 export async function initReneMode(app) {
-  console.log('Initializing René mode with enhanced UI...');
+  console.log('Initializing UPGRADED René mode (4 mod lanes + patterns)...');
   
   // Create envelope/VCA
   envelopeVCA = new EnvelopeVCANode(app.audioContext);
@@ -55,33 +59,190 @@ export async function initReneMode(app) {
       
       updateCurrentStepHighlight('gate', step);
     },
-    onMod: ({ value, time, step }) => {
-      if (modDestinationParam) {
-        const scaledValue = value * modDepthValue;
-        modDestinationParam.setValueAtTime(scaledValue, time);
+    
+    // UPGRADED: Mod callback with lane index
+    onMod: ({ laneIndex, value, time, step }) => {
+      if (modDestinations[laneIndex]) {
+        const scaledValue = value * modDepths[laneIndex];
+        modDestinations[laneIndex].setValueAtTime(scaledValue, time);
       }
       
-      updateCurrentStepHighlight('mod', step);
+      updateCurrentStepHighlight(`mod${laneIndex}`, step);
     },
 
-    // NEW: Add note cycle callback
+    // Pattern system support
     onNoteCycle: ({ time }) => {
-    // When René completes a note sequence cycle, trigger transpose sequencer
-    // BUT ONLY if transpose sequencer is in René clock mode
-    if (app.transposeSeq && app.transposeSeq.getClockSource() === 'rene') {
-      app.transposeSeq.trigger();
-      console.log('🔄 René cycle → Transpose sequencer advanced');
+      // Trigger transpose sequencer if in René clock mode
+      if (app.transposeSeq && app.transposeSeq.getClockSource() === 'rene') {
+        app.transposeSeq.trigger();
+      }
+      
+      // Advance pattern if in linear playback mode
+      if (renePatternSystem) {
+        renePatternSystem.onReneCycleComplete();
+      }
     }
-  }
   });
+  
+  // UPGRADED: Create pattern system
+  renePatternSystem = new RenePatternSystem(reneSequencer);
   
   // Initialize enhanced UI
   initializeEnhancedReneUI(reneSequencer);
   
+  // Initialize pattern system UI
+  initPatternSystemUI(app);
+  
   // Bind controls
   bindReneControls(app);
   
-  console.log('✓ René mode initialized with enhanced UI');
+  console.log('✓ UPGRADED René mode initialized');
+}
+
+/**
+ * Initialize pattern system UI
+ */
+function initPatternSystemUI(app) {
+  const patternGrid = document.getElementById('patternGrid');
+  if (!patternGrid) return;
+  
+  // Generate 8 pattern slots
+  patternGrid.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'pattern-slot empty';
+    slot.dataset.index = i;
+    
+    slot.innerHTML = `
+      <div class="pattern-slot-header">
+        <span class="pattern-number">${i + 1}</span>
+        <div class="pattern-status"></div>
+      </div>
+      <div class="pattern-name">Empty</div>
+      <div class="pattern-repeats">
+        <span class="pattern-repeats-label">×</span>
+        <input type="number" class="pattern-repeats-input" 
+               data-index="${i}" min="1" max="99" value="1">
+      </div>
+    `;
+    
+    patternGrid.appendChild(slot);
+    
+    // Click to recall pattern
+    slot.addEventListener('click', (e) => {
+      if (e.target.classList.contains('pattern-repeats-input')) return;
+      if (renePatternSystem && !renePatternSystem.isPatternEmpty(i)) {
+        renePatternSystem.recallPattern(i);
+        updatePatternUI();
+      }
+    });
+    
+    // Right-click for context menu (optional future enhancement)
+    slot.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      // Could show context menu with Set/Copy/Paste/Delete options
+    });
+  }
+  
+  // Bind pattern repeat inputs
+  document.querySelectorAll('.pattern-repeats-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const index = parseInt(e.target.dataset.index);
+      const repeats = parseInt(e.target.value);
+      if (renePatternSystem) {
+        renePatternSystem.setPatternRepeats(index, repeats);
+      }
+    });
+  });
+  
+  // Bind control buttons
+  document.getElementById('patternSetBtn')?.addEventListener('click', () => {
+    const currentIndex = renePatternSystem?.getCurrentPatternIndex() || 0;
+    if (renePatternSystem) {
+      renePatternSystem.setPattern(currentIndex);
+      updatePatternUI();
+    }
+  });
+  
+  document.getElementById('patternCopyBtn')?.addEventListener('click', () => {
+    const currentIndex = renePatternSystem?.getCurrentPatternIndex() || 0;
+    if (renePatternSystem) {
+      renePatternSystem.copyPattern(currentIndex);
+    }
+  });
+  
+  document.getElementById('patternPasteBtn')?.addEventListener('click', () => {
+    const currentIndex = renePatternSystem?.getCurrentPatternIndex() || 0;
+    if (renePatternSystem) {
+      renePatternSystem.pastePattern(currentIndex);
+      updatePatternUI();
+    }
+  });
+  
+  document.getElementById('patternClearAllBtn')?.addEventListener('click', () => {
+    if (confirm('Clear all patterns? This cannot be undone.')) {
+      if (renePatternSystem) {
+        renePatternSystem.clearAllPatterns();
+        updatePatternUI();
+      }
+    }
+  });
+  
+  // Playback toggle
+  const playbackBtn = document.getElementById('patternPlaybackBtn');
+  playbackBtn?.addEventListener('click', () => {
+    if (!renePatternSystem) return;
+    
+    const isEnabled = !renePatternSystem.playbackEnabled;
+    renePatternSystem.setPlaybackEnabled(isEnabled);
+    
+    playbackBtn.textContent = isEnabled ? '⏸ Disable Playback' : '▶ Enable Playback';
+    playbackBtn.classList.toggle('active', isEnabled);
+  });
+  
+  // Playback mode buttons
+  document.querySelectorAll('.pattern-mode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const mode = e.target.dataset.mode;
+      
+      document.querySelectorAll('.pattern-mode-btn').forEach(b => 
+        b.classList.remove('active'));
+      e.target.classList.add('active');
+      
+      if (renePatternSystem) {
+        renePatternSystem.setPlaybackMode(mode);
+      }
+    });
+  });
+  
+  console.log('✓ Pattern system UI initialized');
+}
+
+/**
+ * Update pattern system UI to reflect current state
+ */
+function updatePatternUI() {
+  if (!renePatternSystem) return;
+  
+  const info = renePatternSystem.getAllPatternInfo();
+  
+  info.forEach((pattern, i) => {
+    const slot = document.querySelector(`.pattern-slot[data-index="${i}"]`);
+    if (!slot) return;
+    
+    slot.classList.toggle('empty', pattern.isEmpty);
+    slot.classList.toggle('current', pattern.isCurrent);
+    
+    const nameDisplay = slot.querySelector('.pattern-name');
+    if (nameDisplay) {
+      nameDisplay.textContent = pattern.isEmpty ? 'Empty' : pattern.name;
+    }
+    
+    const repeatsInput = slot.querySelector('.pattern-repeats-input');
+    if (repeatsInput) {
+      repeatsInput.value = pattern.repeats;
+    }
+  });
 }
 
 /**
@@ -93,19 +254,25 @@ export function toggleReneMode(app, enabled) {
   if (enabled) {
     document.getElementById('reneModePanel')?.style.setProperty('display', 'block');
     document.getElementById('envelopePanel')?.style.setProperty('display', 'block');
+    document.getElementById('renePatternSystem')?.style.setProperty('display', 'block');
     
     enableReneRouting(app);
     
     document.getElementById('reneModeBtn')?.classList.add('active');
     document.getElementById('normalModeBtn')?.classList.remove('active');
     
-    console.log('▶ René mode ENABLED');
+    console.log('▶ UPGRADED René mode ENABLED');
   } else {
     document.getElementById('reneModePanel')?.style.setProperty('display', 'none');
     document.getElementById('envelopePanel')?.style.setProperty('display', 'none');
+    document.getElementById('renePatternSystem')?.style.setProperty('display', 'none');
     
     if (reneSequencer) {
       reneSequencer.setRunning(false);
+    }
+    
+    if (renePatternSystem) {
+      renePatternSystem.setPlaybackEnabled(false);
     }
     
     disableReneRouting(app);
@@ -189,10 +356,10 @@ function disableReneRouting(app) {
 }
 
 /**
- * Set modulation target
+ * UPGRADED: Set modulation target for specific lane
  */
-function setModTarget(app, target) {
-  modDestinationParam = null;
+function setModTarget(app, laneIndex, target) {
+  modDestinations[laneIndex] = null;
   
   if (!target) return;
   
@@ -202,13 +369,40 @@ function setModTarget(app, target) {
     'ma.barrel': app.mangroveA?.params?.barrelKnob,
     'ts.freq': app.threeSisters?.params?.freq,
     'ts.span': app.threeSisters?.params?.span,
-    'ts.quality': app.threeSisters?.params?.quality
+    'ts.quality': app.threeSisters?.params?.quality,
+    // Add more destinations as needed
   };
   
-  modDestinationParam = targetMap[target];
+  modDestinations[laneIndex] = targetMap[target];
   
-  if (modDestinationParam) {
-    console.log(`Mod target: ${target}`);
+  if (modDestinations[laneIndex]) {
+    console.log(`Mod ${laneIndex + 1} target: ${target}`);
+  }
+}
+
+/**
+ * UPGRADED: Populate mod target dropdowns for all 4 lanes
+ */
+function populateModTargetOptions() {
+  const options = `
+    <option value="">-- none --</option>
+    <optgroup label="Mangrove A">
+      <option value="ma.air">Air</option>
+      <option value="ma.formant">Formant</option>
+      <option value="ma.barrel">Barrel</option>
+    </optgroup>
+    <optgroup label="Three Sisters">
+      <option value="ts.freq">Freq</option>
+      <option value="ts.span">Span</option>
+      <option value="ts.quality">Quality</option>
+    </optgroup>
+  `;
+  
+  for (let i = 0; i < 4; i++) {
+    const select = document.getElementById(`modTarget${i}`);
+    if (select) {
+      select.innerHTML = options;
+    }
   }
 }
 
@@ -238,7 +432,7 @@ function bindReneControls(app) {
     }
   });
   
-  // Lane tabs
+  // Lane tabs (UPGRADED: 4 mod lanes)
   document.querySelectorAll('.rene-tab').forEach(tab => {
     tab.addEventListener('click', (e) => {
       const lane = e.target.dataset.lane;
@@ -249,21 +443,29 @@ function bindReneControls(app) {
   // Lane length/division controls
   bindLaneControl('note');
   bindLaneControl('gate');
-  bindLaneControl('mod');
+  bindLaneControl('mod0');
+  bindLaneControl('mod1');
+  bindLaneControl('mod2');
+  bindLaneControl('mod3');
   
-  // Mod target
-  const modTarget = document.getElementById('modTarget');
-  modTarget?.addEventListener('change', (e) => {
-    setModTarget(app, e.target.value);
-  });
+  // UPGRADED: Mod targets and depths for 4 lanes
+  populateModTargetOptions();
   
-  // Mod depth
-  const modDepth = document.getElementById('modDepth');
-  const modDepthValueDisplay = document.getElementById('modDepthValue');
-  modDepth?.addEventListener('input', (e) => {
-    modDepthValue = parseFloat(e.target.value);
-    modDepthValueDisplay.textContent = modDepthValue.toFixed(2);
-  });
+  for (let i = 0; i < 4; i++) {
+    const modTarget = document.getElementById(`modTarget${i}`);
+    modTarget?.addEventListener('change', (e) => {
+      setModTarget(app, i, e.target.value);
+    });
+    
+    const modDepth = document.getElementById(`modDepth${i}`);
+    const modDepthValueDisplay = document.getElementById(`modDepthValue${i}`);
+    modDepth?.addEventListener('input', (e) => {
+      modDepths[i] = parseFloat(e.target.value);
+      if (modDepthValueDisplay) {
+        modDepthValueDisplay.textContent = modDepths[i].toFixed(2);
+      }
+    });
+  }
   
   // Playback mode
   document.querySelectorAll('.mode-toggle-option').forEach(btn => {
@@ -326,10 +528,9 @@ function bindReneControls(app) {
     });
   });
 
-    // NEW: Clock source toggle for transpose sequencer
+  // Clock source toggle for transpose sequencer
   const clockSourceToggle = document.getElementById('transposeClockSource');
   if (clockSourceToggle) {
-    // Set initial state based on app.transposeSeq
     if (app.transposeSeq) {
       const currentSource = app.transposeSeq.getClockSource();
       clockSourceToggle.value = currentSource;
@@ -341,7 +542,6 @@ function bindReneControls(app) {
       if (app.transposeSeq) {
         app.transposeSeq.setClockSource(source);
         
-        // Update UI feedback
         const indicator = document.getElementById('clockSourceIndicator');
         if (indicator) {
           indicator.textContent = source === 'jf' ? 'Clocked by Just Friends' : 'Clocked by René cycles';
@@ -365,7 +565,7 @@ function bindLaneControl(lane) {
   
   lengthSlider?.addEventListener('input', (e) => {
     const length = parseInt(e.target.value);
-    lengthValue.textContent = length;
+    if (lengthValue) lengthValue.textContent = length;
     
     if (reneSequencer) {
       reneSequencer.setLaneTiming({ lane, length });
@@ -382,7 +582,7 @@ function bindLaneControl(lane) {
 }
 
 /**
- * Switch active lane tab
+ * UPGRADED: Switch active lane tab (includes 4 mod lanes)
  */
 function switchLane(lane) {
   // Update tabs
@@ -393,7 +593,10 @@ function switchLane(lane) {
   // Show/hide lane sections
   document.getElementById('reneLaneNote').style.display = lane === 'note' ? 'block' : 'none';
   document.getElementById('reneLaneGate').style.display = lane === 'gate' ? 'block' : 'none';
-  document.getElementById('reneLaneMod').style.display = lane === 'mod' ? 'block' : 'none';
+  document.getElementById('reneLaneMod0').style.display = lane === 'mod0' ? 'block' : 'none';
+  document.getElementById('reneLaneMod1').style.display = lane === 'mod1' ? 'block' : 'none';
+  document.getElementById('reneLaneMod2').style.display = lane === 'mod2' ? 'block' : 'none';
+  document.getElementById('reneLaneMod3').style.display = lane === 'mod3' ? 'block' : 'none';
 }
 
 /**
@@ -436,7 +639,7 @@ function bindEnvelopeControls() {
   
   attackSlider?.addEventListener('input', (e) => {
     const value = parseFloat(e.target.value);
-    attackValue.textContent = value.toFixed(3);
+    if (attackValue) attackValue.textContent = value.toFixed(3);
     
     if (envelopeVCA) {
       envelopeVCA.setAttack(value);
@@ -449,7 +652,7 @@ function bindEnvelopeControls() {
   
   decaySlider?.addEventListener('input', (e) => {
     const value = parseFloat(e.target.value);
-    decayValue.textContent = value.toFixed(3);
+    if (decayValue) decayValue.textContent = value.toFixed(3);
     
     if (envelopeVCA) {
       envelopeVCA.setDecay(value);
@@ -462,7 +665,7 @@ function bindEnvelopeControls() {
   
   sustainSlider?.addEventListener('input', (e) => {
     const value = parseFloat(e.target.value);
-    sustainValue.textContent = value.toFixed(2);
+    if (sustainValue) sustainValue.textContent = value.toFixed(2);
     
     if (envelopeVCA) {
       envelopeVCA.setSustain(value);
@@ -473,4 +676,4 @@ function bindEnvelopeControls() {
 /**
  * Export for use in main.js
  */
-export { reneSequencer, envelopeVCA };
+export { reneSequencer, renePatternSystem, envelopeVCA };
