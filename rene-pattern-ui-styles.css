@@ -9,6 +9,7 @@
   margin-bottom: var(--space-lg);
   border: 2px solid var(--border-light);
   box-shadow: var(--shadow-soft);
+  overflow: hidden; /* FIX: Prevent overflow */
 }
 
 .pattern-system-header {
@@ -18,6 +19,8 @@
   margin-bottom: var(--space-md);
   padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap; /* FIX: Allow wrapping on small screens */
+  gap: var(--space-sm);
 }
 
 .pattern-system-title {
@@ -26,12 +29,14 @@
   letter-spacing: 0.05em;
   color: var(--text-primary);
   text-transform: lowercase;
+  white-space: nowrap; /* FIX: Prevent title wrapping */
 }
 
 .pattern-playback-toggle {
   display: flex;
   gap: var(--space-xs);
   align-items: center;
+  flex-shrink: 0; /* FIX: Prevent shrinking */
 }
 
 .pattern-playback-btn {
@@ -44,6 +49,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap; /* FIX: Prevent text wrapping */
 }
 
 .pattern-playback-btn:hover {
@@ -63,6 +69,8 @@
   grid-template-columns: repeat(8, 1fr);
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
+  width: 100%; /* FIX: Ensure grid doesn't overflow */
+  overflow-x: auto; /* FIX: Allow horizontal scroll if needed */
 }
 
 .pattern-slot {
@@ -76,6 +84,7 @@
   transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
+  min-width: 80px; /* FIX: Ensure minimum width */
 }
 
 .pattern-slot:hover {
@@ -89,6 +98,18 @@
   border-style: dashed;
 }
 
+/* NEW: Selected state (for Set/Copy/Paste operations) */
+.pattern-slot.selected {
+  border-color: #7eb5d6;
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(126, 181, 214, 0.3);
+}
+
+.pattern-slot.selected:not(.empty) {
+  background: rgba(200, 220, 255, 0.6);
+}
+
+/* Current (playing) state */
 .pattern-slot.current {
   background: linear-gradient(135deg, #c49ac4, #7eb5d6);
   border-color: #6b5b95;
@@ -117,6 +138,7 @@
   height: 8px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0; /* FIX: Prevent shrinking */
 }
 
 .pattern-slot:not(.empty) .pattern-status {
@@ -139,6 +161,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-height: 1em; /* FIX: Ensure consistent height */
 }
 
 .pattern-repeats {
@@ -151,6 +174,7 @@
 .pattern-repeats-label {
   font-size: 0.6rem;
   color: var(--text-dim);
+  flex-shrink: 0; /* FIX: Prevent shrinking */
 }
 
 .pattern-repeats-input {
@@ -163,6 +187,7 @@
   font-weight: 600;
   text-align: center;
   color: var(--text-primary);
+  flex-shrink: 0; /* FIX: Prevent shrinking */
 }
 
 .pattern-repeats-input:focus {
@@ -193,6 +218,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap; /* FIX: Prevent wrapping */
 }
 
 .pattern-mode-btn:hover {
@@ -217,6 +243,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
+  white-space: nowrap; /* FIX: Prevent wrapping */
 }
 
 .pattern-control-btn:hover {
@@ -291,6 +318,21 @@
   }
   
   .pattern-controls {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .pattern-mode-controls {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .pattern-system-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .pattern-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
