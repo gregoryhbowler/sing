@@ -24,7 +24,7 @@ class DrumSequencerProcessor extends AudioWorkletProcessor {
     super();
     
     // Clock subdivision state
-    this.subdivisionCounter = 0;
+    // this.subdivisionCounter = 0; COMMENTING THIS OUT TO SEE IF IT WORKS BUT IF IT DOESN'T YOU SHOULD REMOVE THE COMMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     this.clockDivision = 4; // How many drum steps per transpose step
     
     // Pulse detection
@@ -136,13 +136,18 @@ class DrumSequencerProcessor extends AudioWorkletProcessor {
       
       // Detect step clock pulse
       if (stepClockIn && this.detectPulse(stepClockIn[i], this.prevStepPulse)) {
-        this.subdivisionCounter++;
+        // Clock division determines how many drum steps advance per input pulse
+        // division=1: advance 1 step per pulse (slowest)
+        // division=4: advance 4 steps per pulse (default)  
+        // division=16: advance 16 steps per pulse (fastest)
         
-        // Advance drum step every clockDivision pulses
-        if (this.subdivisionCounter >= this.clockDivision) {
-          this.subdivisionCounter = 0;
+        for (let div = 0; div < this.clockDivision; div++) {
           this.advanceDrumStep();
-          stepAdvanced = true;
+          
+          // Trigger on first subdivision
+          if (div === 0) {
+            stepAdvanced = true;
+          }
         }
         
         this.prevStepPulse = stepClockIn[i];
@@ -168,9 +173,8 @@ class DrumSequencerProcessor extends AudioWorkletProcessor {
       this.debugCounter = 0;
       console.log('[Drum Sequencer]', {
         step: this.currentStep,
-        subdivision: `${this.subdivisionCounter}/${this.clockDivision}`,
-        swing: this.swingAmount.toFixed(2),
-        clockDiv: this.clockDivision
+        division: `${this.clockDivision}× (${this.clockDivision} steps per pulse)`,
+        swing: this.swingAmount.toFixed(2)
       });
     }
     
