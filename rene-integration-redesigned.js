@@ -1,5 +1,5 @@
-// rene-integration-upgraded.js
-// UPGRADED Integration for René with 4 mod lanes, pattern system, and Pattern/Edit modes
+// rene-integration-redesigned.js
+// UPGRADED Integration for René with 4 mod lanes, pattern system, Pattern/Edit modes, and drum machine clock
 
 import { ReneSequencer } from './ReneSequencer.js';
 import { RenePatternSystem } from './RenePatternSystem.js';
@@ -28,7 +28,7 @@ let patternMode = false; // false = Edit Mode, true = Pattern Mode
  * Initialize René mode with pattern system
  */
 export async function initReneMode(app) {
-  console.log('Initializing UPGRADED René mode (4 mod lanes + patterns)...');
+  console.log('Initializing UPGRADED René mode (4 mod lanes + patterns + drum clock)...');
   
   // Create envelope/VCA
   envelopeVCA = new EnvelopeVCANode(app.audioContext);
@@ -43,6 +43,7 @@ export async function initReneMode(app) {
   // Create René sequencer with callbacks
   reneSequencer = new ReneSequencer({
     audioContext: app.audioContext,
+    
     onNote: ({ value, time, step }) => {
       // Convert 0-1 value to pitch CV
       const voltage = value * 4.0; // 0-4V range
@@ -54,6 +55,7 @@ export async function initReneMode(app) {
       
       updateCurrentStepHighlight('note', step);
     },
+    
     onGate: ({ isOn, time, step }) => {
       if (isOn) {
         envelopeVCA.triggerGateOn(time);
@@ -85,6 +87,18 @@ export async function initReneMode(app) {
       if (renePatternSystem) {
         renePatternSystem.onReneCycleComplete();
       }
+    },
+    
+    // NEW: 16th note callback for drum machine
+    on16thNote: ({ time }) => {
+      // Only send pulses if drums are set to René clock mode
+      if (app.drumClockSource === 'rene' && app.reneDrumClock) {
+        // Create a brief 5ms pulse for the drum clock
+        const now = time;
+        app.reneDrumClock.offset.setValueAtTime(0, now);
+        app.reneDrumClock.offset.setValueAtTime(1, now);
+        app.reneDrumClock.offset.setValueAtTime(0, now + 0.005);
+      }
     }
   });
   
@@ -109,7 +123,7 @@ export async function initReneMode(app) {
   // Bind controls
   bindReneControls(app);
   
-  console.log('✓ UPGRADED René mode initialized');
+  console.log('✓ UPGRADED René mode initialized with drum machine clock');
 }
 
 /**
