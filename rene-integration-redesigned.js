@@ -165,6 +165,60 @@ function setPatternMode(enabled) {
 }
 
 /**
+ * Reset to blank/live mode - exits patterns and loads default state
+ */
+function resetToBlankMode() {
+  // Stop playback
+  if (renePatternSystem) {
+    renePatternSystem.setPlaybackEnabled(false);
+    const playbackBtn = document.getElementById('patternPlaybackBtn');
+    if (playbackBtn) {
+      playbackBtn.textContent = '▶ Enable Playback';
+      playbackBtn.classList.remove('active');
+    }
+  }
+  
+  // Enter Edit Mode
+  setPatternMode(false);
+  
+  // Load default blank state into René
+  if (reneSequencer) {
+    const blankState = {
+      noteValues: new Array(16).fill(0.5),
+      gateEnabled: new Array(16).fill(true),
+      modValues: [
+        new Array(16).fill(0),
+        new Array(16).fill(0),
+        new Array(16).fill(0),
+        new Array(16).fill(0)
+      ],
+      noteLength: 16,
+      gateLength: 16,
+      modLengths: [16, 16, 16, 16],
+      noteDiv: '1/4',
+      gateDiv: '1/4',
+      modDivs: ['1/4', '1/4', '1/4', '1/4'],
+      snakePattern: 0,
+      playbackMode: 'forward',
+      stepEnabled: new Array(16).fill(true),
+      tempo: 120
+    };
+    
+    reneSequencer.setState(blankState);
+    syncReneUIFromState();
+  }
+  
+  // Clear pattern selection visuals
+  document.querySelectorAll('.pattern-slot').forEach(slot => {
+    slot.classList.remove('selected', 'playing');
+  });
+  
+  updatePatternUI();
+  
+  console.log('⚪ Blank Mode: Ready for live playing');
+}
+
+/**
  * Initialize pattern system UI
  */
 function initPatternSystemUI(app) {
@@ -294,6 +348,11 @@ function initPatternSystemUI(app) {
   
   document.getElementById('patternPlaybackModeBtn')?.addEventListener('click', () => {
     setPatternMode(true); // Pattern Mode
+  });
+  
+  // Blank button - reset to live mode
+  document.getElementById('patternBlankBtn')?.addEventListener('click', () => {
+    resetToBlankMode();
   });
   
   // Playback toggle
