@@ -44,26 +44,22 @@ export class DrumSequencerNode extends AudioWorkletNode {
     this.params.swing.value = Math.max(0, Math.min(1, value));
   }
 
-  // ========== RANDOMIZATION METHODS ==========
+  // ========== STEP PROGRAMMING ==========
 
-  randomizePattern() {
-    this.port.postMessage({ type: 'randomizePattern' });
+  setStep(voice, step, value) {
+    this.port.postMessage({ 
+      type: 'setStep', 
+      voice: voice, // 'kick', 'snare', or 'hat'
+      step: step,   // 0-15
+      value: value  // true/false or 1/0
+    });
   }
 
-  randomizeGroove() {
-    this.port.postMessage({ type: 'randomizeGroove' });
-  }
-
-  randomizeKickPattern() {
-    this.port.postMessage({ type: 'randomizeKickPattern' });
-  }
-
-  randomizeSnarePattern() {
-    this.port.postMessage({ type: 'randomizeSnarePattern' });
-  }
-
-  randomizeHatPattern() {
-    this.port.postMessage({ type: 'randomizeHatPattern' });
+  clearPattern(voice) {
+    this.port.postMessage({ 
+      type: 'clearPattern', 
+      voice: voice // 'kick', 'snare', 'hat', or 'all'
+    });
   }
 
   // ========== I/O ACCESSORS ==========

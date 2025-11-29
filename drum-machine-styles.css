@@ -37,17 +37,139 @@
   cursor: pointer;
 }
 
-.drum-randomize-section {
+/* Step Sequencer Section */
+.drum-sequencer-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.drum-seq-row {
   margin-bottom: var(--space-lg);
 }
 
-.drum-randomize-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-sm);
+.drum-seq-row:last-child {
+  margin-bottom: 0;
 }
 
-.drum-randomize-btn {
+.drum-seq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.drum-seq-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.drum-seq-clear-btn {
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drum-seq-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-primary);
+}
+
+.drum-seq-clear-btn:active {
+  transform: scale(0.95);
+}
+
+/* Step Grid */
+.drum-step-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 4px;
+}
+
+.drum-step {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drum-step::before {
+  content: attr(data-step);
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.drum-step:hover {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+}
+
+.drum-step.active {
+  background: linear-gradient(135deg, #e08080, #f7c49a);
+  border-color: #e08080;
+  box-shadow: 0 2px 4px rgba(224, 128, 128, 0.3);
+}
+
+.drum-step.active::before {
+  color: white;
+  font-weight: 700;
+}
+
+.drum-step.playing {
+  animation: drum-step-pulse 0.2s ease-out;
+}
+
+@keyframes drum-step-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(224, 128, 128, 0.3);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(224, 128, 128, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(224, 128, 128, 0.3);
+  }
+}
+
+/* Global Controls */
+.drum-global-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
+  margin-bottom: var(--space-md);
+}
+
+.drum-control-btn {
   padding: var(--space-md);
   background: rgba(255, 255, 255, 0.6);
   border: 2px solid var(--border-light);
@@ -58,29 +180,32 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: center;
+  grid-column: 1 / -1;
 }
 
-.drum-randomize-btn:hover {
+.drum-control-btn:hover {
   background: rgba(255, 255, 255, 0.8);
   border-color: var(--border-medium);
   transform: translateY(-2px);
 }
 
-.drum-randomize-btn:active {
+.drum-control-btn:active {
   transform: translateY(0);
 }
 
-.drum-randomize-btn.primary {
-  background: linear-gradient(135deg, #e08080, #f7c49a);
-  color: white;
-  border-color: #e08080;
+.drum-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
-.drum-randomize-btn.primary:hover {
-  background: linear-gradient(135deg, #d67070, #f0b080);
+.drum-control-group label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
+/* Voice Parameters */
 .drum-voices-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -184,32 +309,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.drum-global-controls {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-md);
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--border-light);
-}
-
-.drum-control-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.drum-control-group label {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
 @media (max-width: 1024px) {
   .drum-voices-container {
     grid-template-columns: 1fr;
   }
   
-  .drum-randomize-grid {
-    grid-template-columns: 1fr;
+  .drum-step-grid {
+    grid-template-columns: repeat(8, 1fr);
   }
 }

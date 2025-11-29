@@ -1,6 +1,7 @@
 // drum-sequencer-processor.js
-// Generative 16-step drum sequencer with clock multiplier
-// Clocked from external source (JF or René), subdivides to 16th notes
+// Generative 16-step drum sequencer
+// Each clock pulse = one step (16th note)
+// Clock source should pulse at 16th note rate (e.g., 8 Hz for 120 BPM)
 
 class DrumSequencerProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
@@ -17,7 +18,7 @@ class DrumSequencerProcessor extends AudioWorkletProcessor {
     this.clockThreshold = 0.1;
     this.lastClockTime = 0; // Sample count of last clock edge
     this.clockInterval = 0; // Measured interval between clocks
-    this.stepSize = 11025; // Samples per 16th note (default 120 BPM)
+    this.stepSize = 5512; // Samples per step (default ~8 Hz = 120 BPM 16th notes at 44.1kHz)
     
     // Sequencer state
     this.currentStep = 0; // 0-15
@@ -115,11 +116,13 @@ class DrumSequencerProcessor extends AudioWorkletProcessor {
     if (this.lastClockTime > 0) {
       this.clockInterval = now - this.lastClockTime;
       
-      // Subdivide into 16th notes (4 per quarter note clock)
-      this.stepSize = this.clockInterval / 4;
+      // Each clock pulse = one step (16th note)
+      // Clock source should already be pulsing at 16th note rate
+      this.stepSize = this.clockInterval;
       
-      // Clamp to reasonable values (30-300 BPM equivalent)
-      this.stepSize = Math.max(2756, Math.min(44100, this.stepSize));
+      // Clamp to reasonable 16th note range (60-480 BPM)
+      // 60 BPM 16ths: 11025 samples, 480 BPM 16ths: 1378 samples at 44.1kHz
+      this.stepSize = Math.max(1378, Math.min(11025, this.stepSize));
     }
     
     this.lastClockTime = now;
