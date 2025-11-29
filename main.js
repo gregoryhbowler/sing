@@ -1,6 +1,5 @@
 // main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine
-// UPDATED: Includes 7 LFOs with dual destinations, comprehensive modulation routing, and drum machine
-// FIXED: Drum clock routing uses gain nodes for proper crossfading
+// FIXED: Drums now audible with default pattern, proper clock source, and better UI initialization
 
 import { JustFriendsNode } from './JustFriendsNode.js';
 import { JustFriendsOscNode } from './JustFriendsOscNode.js';
@@ -43,9 +42,9 @@ class Phase5App {
     this.drumSequencer = null;
     this.drumSynth = null;
     this.drumMasterGain = null;
-    this.drumClockSource = 'jf'; // 'jf' or 'rene'
+    this.drumClockSource = 'jf'; // Default to JF (always running)
     
-    // Clock pulse generators for drums (FIXED: using gain nodes)
+    // Clock pulse generators for drums
     this.jfDrumClockGain = null;
     this.reneDrumClockGain = null;
     this.reneClockBuffer = null;
@@ -166,7 +165,7 @@ class Phase5App {
       this.drumMasterGain = this.audioContext.createGain();
       this.drumMasterGain.gain.value = 0.7;
       
-      // Create clock pulse generators (FIXED: using gain nodes)
+      // Create clock pulse generators
       this.createDrumClockSources();
 
       this.setupScope1();
@@ -216,7 +215,7 @@ class Phase5App {
       this.jf1.get6NOutput().connect(this.jfMerger, 0, 4);
       this.jfMerger.connect(this.modMatrix.getInput());
       
-      // Setup drum routing (FIXED: now handles gain-based clock routing)
+      // Setup drum routing
       this.setupDrumRouting();
       
       console.log('=== Phase 5 + LFOs + Drums ===');
@@ -253,7 +252,7 @@ class Phase5App {
     
     // René Clock: Gain node that will receive pulses from René callback
     this.reneDrumClockGain = this.audioContext.createGain();
-    this.reneDrumClockGain.gain.value = 0; // Start silent
+    this.reneDrumClockGain.gain.value = 0;
     
     // Create a buffer source for René clock pulses
     this.createReneClockBuffer();
@@ -283,101 +282,146 @@ class Phase5App {
   }
 
   setupDrumRouting() {
-  // Connect sequencer outputs to synth inputs
-  this.drumSequencer.getKickTriggerOutput().connect(this.drumSynth.getKickTriggerInput());
-  this.drumSequencer.getSnareTriggerOutput().connect(this.drumSynth.getSnareTriggerInput());
-  this.drumSequencer.getHatTriggerOutput().connect(this.drumSynth.getHatTriggerInput());
-  
-  // Connect synth output to master
-  this.drumSynth.getOutput().connect(this.drumMasterGain);
-  this.drumMasterGain.connect(this.masterGain);
-  
-  // Source 1: JF
-  this.jf1.get4NOutput().connect(this.jfDrumClockGain);
-  this.jfDrumClockGain.connect(this.drumSequencer.getStepClockInput());
-  
-  // Source 2: René
-  this.reneDrumClockGain.connect(this.drumSequencer.getStepClockInput());
-  
-  // Source 3: Transpose Sequencer
-  this.transposeStepClockGain = this.audioContext.createGain();
-  this.transposeStepClockGain.gain.value = 0;
-  this.transposeSeq.getStepPulseOutput().connect(this.transposeStepClockGain);
-  this.transposeStepClockGain.connect(this.drumSequencer.getStepClockInput());
-  
-  // Reset pulse
-  this.transposeSeq.getResetPulseOutput().connect(this.drumSequencer.getResetClockInput());
-  
-  // Set defaults
-  this.setDrumClockSource('transpose');
-  this.drumSequencer.setClockDivision(4);
-  
-  console.log('✓ Drum routing complete (3 clock sources + division)');
-}
+    // Connect sequencer outputs to synth inputs
+    this.drumSequencer.getKickTriggerOutput().connect(this.drumSynth.getKickTriggerInput());
+    this.drumSequencer.getSnareTriggerOutput().connect(this.drumSynth.getSnareTriggerInput());
+    this.drumSequencer.getHatTriggerOutput().connect(this.drumSynth.getHatTriggerInput());
+    
+    // Connect synth output to master
+    this.drumSynth.getOutput().connect(this.drumMasterGain);
+    this.drumMasterGain.connect(this.masterGain);
+    
+    // Source 1: JF (always running - best default)
+    this.jf1.get4NOutput().connect(this.jfDrumClockGain);
+    this.jfDrumClockGain.connect(this.drumSequencer.getStepClockInput());
+    
+    // Source 2: René
+    this.reneDrumClockGain.connect(this.drumSequencer.getStepClockInput());
+    
+    // Source 3: Transpose Sequencer
+    this.transposeStepClockGain = this.audioContext.createGain();
+    this.transposeStepClockGain.gain.value = 0;
+    this.transposeSeq.getStepPulseOutput().connect(this.transposeStepClockGain);
+    this.transposeStepClockGain.connect(this.drumSequencer.getStepClockInput());
+    
+    // Reset pulse
+    this.transposeSeq.getResetPulseOutput().connect(this.drumSequencer.getResetClockInput());
+    
+    // Set defaults - JF is always running so it's a good default
+    this.setDrumClockSource('jf');
+    this.drumSequencer.setClockDivision(4);
+    
+    // Add a basic kick pattern so you hear something immediately
+    this.addDefaultDrumPattern();
+    
+    console.log('✓ Drum routing complete (3 clock sources + division)');
+  }
+
+  addDefaultDrumPattern() {
+    // Four-on-the-floor kick pattern
+    this.drumSequencer.setStep('kick', 0, true);
+    this.drumSequencer.setStep('kick', 4, true);
+    this.drumSequencer.setStep('kick', 8, true);
+    this.drumSequencer.setStep('kick', 12, true);
+    
+    // Backbeat snare
+    this.drumSequencer.setStep('snare', 4, true);
+    this.drumSequencer.setStep('snare', 12, true);
+    
+    // 8th note hi-hats
+    for (let i = 0; i < 16; i += 2) {
+      this.drumSequencer.setStep('hat', i, true);
+    }
+    
+    console.log('✓ Default drum pattern loaded (4/4 house beat)');
+  }
 
   setDrumClockSource(source) {
-  this.drumClockSource = source;
-  
-  const now = this.audioContext.currentTime;
-  const fadeTime = 0.01;
-  
-  // Fade out ALL sources
-  this.jfDrumClockGain.gain.cancelScheduledValues(now);
-  this.jfDrumClockGain.gain.setValueAtTime(this.jfDrumClockGain.gain.value, now);
-  this.jfDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
-  
-  this.reneDrumClockGain.gain.cancelScheduledValues(now);
-  this.reneDrumClockGain.gain.setValueAtTime(this.reneDrumClockGain.gain.value, now);
-  this.reneDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
-  
-  this.transposeStepClockGain.gain.cancelScheduledValues(now);
-  this.transposeStepClockGain.gain.setValueAtTime(this.transposeStepClockGain.gain.value, now);
-  this.transposeStepClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
-  
-  // Fade in selected source
-  if (source === 'jf') {
-    this.jfDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
-    console.log('✓ Drums clocked by Just Friends 4N');
+    this.drumClockSource = source;
     
-  } else if (source === 'rene') {
-    this.reneDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
-    console.log('✓ Drums clocked by René cycles');
+    const now = this.audioContext.currentTime;
+    const fadeTime = 0.01;
     
-  } else if (source === 'transpose') {
-    this.transposeStepClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
-    console.log('✓ Drums clocked by Transpose Sequencer (step pulses)');
+    // Fade out ALL sources
+    this.jfDrumClockGain.gain.cancelScheduledValues(now);
+    this.jfDrumClockGain.gain.setValueAtTime(this.jfDrumClockGain.gain.value, now);
+    this.jfDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+    
+    this.reneDrumClockGain.gain.cancelScheduledValues(now);
+    this.reneDrumClockGain.gain.setValueAtTime(this.reneDrumClockGain.gain.value, now);
+    this.reneDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+    
+    this.transposeStepClockGain.gain.cancelScheduledValues(now);
+    this.transposeStepClockGain.gain.setValueAtTime(this.transposeStepClockGain.gain.value, now);
+    this.transposeStepClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+    
+    // Fade in selected source
+    if (source === 'jf') {
+      this.jfDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
+      console.log('✓ Drums clocked by Just Friends 4N');
+      
+    } else if (source === 'rene') {
+      this.reneDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
+      console.log('✓ Drums clocked by René cycles');
+      
+    } else if (source === 'transpose') {
+      this.transposeStepClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
+      console.log('✓ Drums clocked by Transpose Sequencer (step pulses)');
+    }
   }
-}
 
   initDrumStepSequencerUI() {
-  const voices = ['kick', 'snare', 'hat'];
-  
-  voices.forEach(voice => {
-    const container = document.getElementById(`drum${voice.charAt(0).toUpperCase() + voice.slice(1)}Steps`);
-    if (!container) return;
+    const voices = ['kick', 'snare', 'hat'];
     
-    container.innerHTML = '';
+    voices.forEach(voice => {
+      const container = document.getElementById(`drum${voice.charAt(0).toUpperCase() + voice.slice(1)}Steps`);
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      for (let step = 0; step < 16; step++) {
+        const stepBtn = document.createElement('div');
+        stepBtn.className = 'drum-step';
+        stepBtn.dataset.voice = voice;
+        stepBtn.dataset.step = step;
+        stepBtn.setAttribute('data-step', (step + 1).toString());
+        
+        stepBtn.addEventListener('click', () => {
+          const isActive = stepBtn.classList.toggle('active');
+          if (this.drumSequencer) {
+            this.drumSequencer.setStep(voice, step, isActive);
+          }
+        });
+        
+        container.appendChild(stepBtn);
+      }
+    });
     
-    for (let step = 0; step < 16; step++) {
-      const stepBtn = document.createElement('div');
-      stepBtn.className = 'drum-step';
-      stepBtn.dataset.voice = voice;
-      stepBtn.dataset.step = step;
-      stepBtn.setAttribute('data-step', (step + 1).toString());
-      
-      stepBtn.addEventListener('click', () => {
-        const isActive = stepBtn.classList.toggle('active');
-        if (this.drumSequencer) {
-          this.drumSequencer.setStep(voice, step, isActive);
-        }
-      });
-      
-      container.appendChild(stepBtn);
+    // Set UI to match default pattern
+    this.syncDrumUIWithPattern();
+    
+    console.log('✓ Drum step sequencer UI initialized with default pattern');
+  }
+
+  syncDrumUIWithPattern() {
+    // Kick pattern (four-on-the-floor)
+    [0, 4, 8, 12].forEach(step => {
+      const stepEl = document.querySelector(`.drum-step[data-voice="kick"][data-step="${step}"]`);
+      if (stepEl) stepEl.classList.add('active');
+    });
+    
+    // Snare pattern (backbeat)
+    [4, 12].forEach(step => {
+      const stepEl = document.querySelector(`.drum-step[data-voice="snare"][data-step="${step}"]`);
+      if (stepEl) stepEl.classList.add('active');
+    });
+    
+    // Hi-hat pattern (8th notes)
+    for (let i = 0; i < 16; i += 2) {
+      const stepEl = document.querySelector(`.drum-step[data-voice="hat"][data-step="${i}"]`);
+      if (stepEl) stepEl.classList.add('active');
     }
-  });
-  
-  console.log('✓ Drum step sequencer UI initialized');
-}
+  }
 
   buildDestinationMap() {
     // COMPREHENSIVE destination map - every parameter with a UI control
@@ -513,7 +557,7 @@ class Phase5App {
       lfo.setPhase(i / 7); // Stagger phases
     });
     
-    // Drum machine defaults (from screenshot)
+    // Drum machine defaults
     this.drumSynth.setKickPitch(30);
     this.drumSynth.setKickDecay(0.09);
     this.drumSynth.setKickDrive(0);
@@ -532,7 +576,7 @@ class Phase5App {
     this.drumSequencer.setSwing(0);
     this.drumMasterGain.gain.value = 0.70;
     
-    console.log('✓ Drum defaults set to screenshot values');
+    console.log('✓ Drum defaults set');
   }
 
   setActiveOscillator(osc) {
@@ -1441,95 +1485,95 @@ class Phase5App {
   }
 
   bindDrumControls() {
-  // Clock source selector
-  const clockSource = document.getElementById('drumClockSource');
-  clockSource?.addEventListener('change', (e) => {
-    this.setDrumClockSource(e.target.value);
-  });
-  
-  // Clock division selector
-  const clockDivision = document.getElementById('drumClockDivision');
-  clockDivision?.addEventListener('change', (e) => {
-    this.drumSequencer?.setClockDivision(parseInt(e.target.value));
-  });
-  
-  // Clear buttons for individual voices
-  document.querySelectorAll('.drum-seq-clear-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const voice = e.target.dataset.voice;
-      
-      // Clear UI
-      document.querySelectorAll(`.drum-step[data-voice="${voice}"]`).forEach(step => {
+    // Clock source selector
+    const clockSource = document.getElementById('drumClockSource');
+    clockSource?.addEventListener('change', (e) => {
+      this.setDrumClockSource(e.target.value);
+    });
+    
+    // Clock division selector
+    const clockDivision = document.getElementById('drumClockDivision');
+    clockDivision?.addEventListener('change', (e) => {
+      this.drumSequencer?.setClockDivision(parseInt(e.target.value));
+    });
+    
+    // Clear buttons for individual voices
+    document.querySelectorAll('.drum-seq-clear-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const voice = e.target.dataset.voice;
+        
+        // Clear UI
+        document.querySelectorAll(`.drum-step[data-voice="${voice}"]`).forEach(step => {
+          step.classList.remove('active');
+        });
+        
+        // Clear in processor
+        if (this.drumSequencer) {
+          this.drumSequencer.clearPattern(voice);
+        }
+        
+        console.log(`✓ ${voice} pattern cleared`);
+      });
+    });
+    
+    // Clear all button
+    document.getElementById('drumClearAll')?.addEventListener('click', () => {
+      document.querySelectorAll('.drum-step').forEach(step => {
         step.classList.remove('active');
       });
       
-      // Clear in processor
       if (this.drumSequencer) {
-        this.drumSequencer.clearPattern(voice);
+        this.drumSequencer.clearPattern('all');
       }
       
-      console.log(`✓ ${voice} pattern cleared`);
-    });
-  });
-  
-  // Clear all button
-  document.getElementById('drumClearAll')?.addEventListener('click', () => {
-    document.querySelectorAll('.drum-step').forEach(step => {
-      step.classList.remove('active');
+      console.log('✓ All drum patterns cleared');
     });
     
-    if (this.drumSequencer) {
-      this.drumSequencer.clearPattern('all');
-    }
+    // Parameter controls
+    this.bindDrumParam('drumKickPitch', (v) => this.drumSynth.setKickPitch(v), ' Hz');
+    this.bindDrumParam('drumKickDecay', (v) => this.drumSynth.setKickDecay(v), 's');
+    this.bindDrumParam('drumKickDrive', (v) => this.drumSynth.setKickDrive(v));
+    this.bindDrumParam('drumKickVolume', (v) => this.drumSynth.setKickVolume(v));
     
-    console.log('✓ All drum patterns cleared');
-  });
-  
-  // Parameter controls
-  this.bindDrumParam('drumKickPitch', (v) => this.drumSynth.setKickPitch(v), ' Hz');
-  this.bindDrumParam('drumKickDecay', (v) => this.drumSynth.setKickDecay(v), 's');
-  this.bindDrumParam('drumKickDrive', (v) => this.drumSynth.setKickDrive(v));
-  this.bindDrumParam('drumKickVolume', (v) => this.drumSynth.setKickVolume(v));
-  
-  this.bindDrumParam('drumSnarePitch', (v) => this.drumSynth.setSnarePitch(v), ' Hz');
-  this.bindDrumParam('drumSnareDecay', (v) => this.drumSynth.setSnareDecay(v), 's');
-  this.bindDrumParam('drumSnareDrive', (v) => this.drumSynth.setSnareDrive(v));
-  this.bindDrumParam('drumSnareVolume', (v) => this.drumSynth.setSnareVolume(v));
-  
-  this.bindDrumParam('drumHatDecay', (v) => this.drumSynth.setHatDecay(v), 's');
-  this.bindDrumParam('drumHatHPF', (v) => this.drumSynth.setHatHPF(v), ' Hz');
-  this.bindDrumParam('drumHatDrive', (v) => this.drumSynth.setHatDrive(v));
-  this.bindDrumParam('drumHatVolume', (v) => this.drumSynth.setHatVolume(v));
-  
-  this.bindDrumParam('drumSwing', (v) => {
-    this.drumSequencer.setSwing(v);
-    const display = document.getElementById('drumSwingValue');
-    if (display) display.textContent = `${Math.round(v * 100)}%`;
-  });
-  
-  this.bindDrumParam('drumMasterVolume', (v) => {
-    this.drumMasterGain.gain.value = v;
-  });
-  
-  // Mute toggles
-  document.getElementById('drumKickMute')?.addEventListener('change', (e) => {
-    const muteVolume = e.target.checked ? 0 : 0.80;
-    this.drumSynth.setKickVolume(muteVolume);
-    document.getElementById('drumKickSection')?.classList.toggle('muted', e.target.checked);
-  });
-  
-  document.getElementById('drumSnareMute')?.addEventListener('change', (e) => {
-    const muteVolume = e.target.checked ? 0 : 0.60;
-    this.drumSynth.setSnareVolume(muteVolume);
-    document.getElementById('drumSnareSection')?.classList.toggle('muted', e.target.checked);
-  });
-  
-  document.getElementById('drumHatMute')?.addEventListener('change', (e) => {
-    const muteVolume = e.target.checked ? 0 : 0.40;
-    this.drumSynth.setHatVolume(muteVolume);
-    document.getElementById('drumHatSection')?.classList.toggle('muted', e.target.checked);
-  });
-}
+    this.bindDrumParam('drumSnarePitch', (v) => this.drumSynth.setSnarePitch(v), ' Hz');
+    this.bindDrumParam('drumSnareDecay', (v) => this.drumSynth.setSnareDecay(v), 's');
+    this.bindDrumParam('drumSnareDrive', (v) => this.drumSynth.setSnareDrive(v));
+    this.bindDrumParam('drumSnareVolume', (v) => this.drumSynth.setSnareVolume(v));
+    
+    this.bindDrumParam('drumHatDecay', (v) => this.drumSynth.setHatDecay(v), 's');
+    this.bindDrumParam('drumHatHPF', (v) => this.drumSynth.setHatHPF(v), ' Hz');
+    this.bindDrumParam('drumHatDrive', (v) => this.drumSynth.setHatDrive(v));
+    this.bindDrumParam('drumHatVolume', (v) => this.drumSynth.setHatVolume(v));
+    
+    this.bindDrumParam('drumSwing', (v) => {
+      this.drumSequencer.setSwing(v);
+      const display = document.getElementById('drumSwingValue');
+      if (display) display.textContent = `${Math.round(v * 100)}%`;
+    });
+    
+    this.bindDrumParam('drumMasterVolume', (v) => {
+      this.drumMasterGain.gain.value = v;
+    });
+    
+    // Mute toggles
+    document.getElementById('drumKickMute')?.addEventListener('change', (e) => {
+      const muteVolume = e.target.checked ? 0 : 0.80;
+      this.drumSynth.setKickVolume(muteVolume);
+      document.getElementById('drumKickSection')?.classList.toggle('muted', e.target.checked);
+    });
+    
+    document.getElementById('drumSnareMute')?.addEventListener('change', (e) => {
+      const muteVolume = e.target.checked ? 0 : 0.60;
+      this.drumSynth.setSnareVolume(muteVolume);
+      document.getElementById('drumSnareSection')?.classList.toggle('muted', e.target.checked);
+    });
+    
+    document.getElementById('drumHatMute')?.addEventListener('change', (e) => {
+      const muteVolume = e.target.checked ? 0 : 0.40;
+      this.drumSynth.setHatVolume(muteVolume);
+      document.getElementById('drumHatSection')?.classList.toggle('muted', e.target.checked);
+    });
+  }
 
   bindDrumParam(id, callback, suffix = '') {
     const slider = document.getElementById(id);
