@@ -92,12 +92,9 @@ export async function initReneMode(app) {
     // NEW: 16th note callback for drum machine
     on16thNote: ({ time }) => {
       // Only send pulses if drums are set to René clock mode
-      if (app.drumClockSource === 'rene' && app.reneDrumClock) {
-        // Create a brief 5ms pulse for the drum clock
-        const now = time;
-        app.reneDrumClock.offset.setValueAtTime(0, now);
-        app.reneDrumClock.offset.setValueAtTime(1, now);
-        app.reneDrumClock.offset.setValueAtTime(0, now + 0.005);
+      if (app.drumClockSource === 'rene' && app.triggerReneClockPulse) {
+        // Trigger a buffer-based pulse at the scheduled time
+        app.triggerReneClockPulse(time);
       }
     }
   });
