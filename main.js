@@ -49,6 +49,7 @@ class Phase5App {
     this.jfDrumClockGain = null;
     this.reneDrumClockGain = null;
     this.reneClockBuffer = null;
+    this.transposeStepClockGain = null;
     
     // Oscillator selection state
     this.activeOscillator = 'mangrove';
@@ -315,35 +316,38 @@ class Phase5App {
 }
 
   setDrumClockSource(source) {
-    this.drumClockSource = source;
+  this.drumClockSource = source;
+  
+  const now = this.audioContext.currentTime;
+  const fadeTime = 0.01;
+  
+  // Fade out ALL sources
+  this.jfDrumClockGain.gain.cancelScheduledValues(now);
+  this.jfDrumClockGain.gain.setValueAtTime(this.jfDrumClockGain.gain.value, now);
+  this.jfDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+  
+  this.reneDrumClockGain.gain.cancelScheduledValues(now);
+  this.reneDrumClockGain.gain.setValueAtTime(this.reneDrumClockGain.gain.value, now);
+  this.reneDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+  
+  this.transposeStepClockGain.gain.cancelScheduledValues(now);
+  this.transposeStepClockGain.gain.setValueAtTime(this.transposeStepClockGain.gain.value, now);
+  this.transposeStepClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+  
+  // Fade in selected source
+  if (source === 'jf') {
+    this.jfDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
+    console.log('✓ Drums clocked by Just Friends 4N');
     
-    const now = this.audioContext.currentTime;
-    const fadeTime = 0.01;
+  } else if (source === 'rene') {
+    this.reneDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
+    console.log('✓ Drums clocked by René cycles');
     
-    if (source === 'jf') {
-      // Enable JF clock, disable René clock
-      this.jfDrumClockGain.gain.cancelScheduledValues(now);
-      this.jfDrumClockGain.gain.setValueAtTime(this.jfDrumClockGain.gain.value, now);
-      this.jfDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime);
-      
-      this.reneDrumClockGain.gain.cancelScheduledValues(now);
-      this.reneDrumClockGain.gain.setValueAtTime(this.reneDrumClockGain.gain.value, now);
-      this.reneDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
-      
-      console.log('✓ Drums clocked by Just Friends');
-    } else {
-      // Enable René clock, disable JF clock
-      this.jfDrumClockGain.gain.cancelScheduledValues(now);
-      this.jfDrumClockGain.gain.setValueAtTime(this.jfDrumClockGain.gain.value, now);
-      this.jfDrumClockGain.gain.linearRampToValueAtTime(0, now + fadeTime);
-      
-      this.reneDrumClockGain.gain.cancelScheduledValues(now);
-      this.reneDrumClockGain.gain.setValueAtTime(this.reneDrumClockGain.gain.value, now);
-      this.reneDrumClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime);
-      
-      console.log('✓ Drums clocked by René (16th notes)');
-    }
+  } else if (source === 'transpose') {
+    this.transposeStepClockGain.gain.linearRampToValueAtTime(1.0, now + fadeTime * 2);
+    console.log('✓ Drums clocked by Transpose Sequencer (step pulses)');
   }
+}
 
   initDrumStepSequencerUI() {
   const voices = ['kick', 'snare', 'hat'];
