@@ -1443,6 +1443,12 @@ class Phase5App {
     this.setDrumClockSource(e.target.value);
   });
   
+  // Clock division selector
+  const clockDivision = document.getElementById('drumClockDivision');
+  clockDivision?.addEventListener('change', (e) => {
+    this.drumSequencer?.setClockDivision(parseInt(e.target.value));
+  });
+  
   // Clear buttons for individual voices
   document.querySelectorAll('.drum-seq-clear-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1475,7 +1481,7 @@ class Phase5App {
     console.log('✓ All drum patterns cleared');
   });
   
-  // Parameter controls (unchanged)
+  // Parameter controls
   this.bindDrumParam('drumKickPitch', (v) => this.drumSynth.setKickPitch(v), ' Hz');
   this.bindDrumParam('drumKickDecay', (v) => this.drumSynth.setKickDecay(v), 's');
   this.bindDrumParam('drumKickDrive', (v) => this.drumSynth.setKickDrive(v));
