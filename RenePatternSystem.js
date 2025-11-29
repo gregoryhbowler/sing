@@ -3,7 +3,7 @@
 // 8 patterns with linear playback (with repeats) or manual trigger mode
 
 export class RenePatternSystem {
-  constructor(reneSequencer) {
+  constructor(reneSequencer, options = {}) {
     this.reneSequencer = reneSequencer;
     
     // 8 pattern slots
@@ -21,6 +21,9 @@ export class RenePatternSystem {
     
     // Clipboard for copy/paste
     this.clipboard = null;
+    
+    // Callback when pattern is recalled (for UI updates)
+    this.onPatternRecall = options.onPatternRecall || null;
     
     console.log('✓ René Pattern System initialized (8 patterns)');
   }
@@ -54,6 +57,12 @@ export class RenePatternSystem {
     this.currentRepeatCount = 0;
     
     console.log(`✓ Pattern ${index + 1} recalled`);
+    
+    // Trigger callback for UI updates
+    if (this.onPatternRecall) {
+      this.onPatternRecall(index);
+    }
+    
     return true;
   }
   
