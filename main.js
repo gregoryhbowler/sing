@@ -291,8 +291,13 @@ class Phase5App {
     this.drumSynth.getOutput().connect(this.drumMasterGain);
     this.drumMasterGain.connect(this.masterGain);
     
-    // Connect JF IDENTITY directly to JF drum clock path
-    this.jf1.getIdentityOutput().connect(this.jfDrumClockGain);
+    // Connect JF 2N to drum clock (faster than IDENTITY for proper 16th notes)
+    // With INTONE at 0.5 (unison), 2N runs at same speed as IDENTITY
+    // Increase INTONE for faster drum tempos:
+    //   - INTONE = 0.75: 1.5× speed
+    //   - INTONE = 1.0: 2× speed (overtone series)
+    // For 120 BPM drums: Set JF TIME~0.65, INTONE=1.0
+    this.jf1.get2NOutput().connect(this.jfDrumClockGain);
     
     // Both clock sources feed into drum sequencer (use gains to switch)
     this.jfDrumClockGain.connect(this.drumSequencer.getClockInput());
@@ -301,7 +306,7 @@ class Phase5App {
     // Set initial clock source (JF by default)
     this.setDrumClockSource('jf');
     
-    console.log('✓ Drum machine routing complete');
+    console.log('✓ Drum machine routing complete (using JF 2N for clock)');
   }
 
   setDrumClockSource(source) {
