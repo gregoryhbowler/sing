@@ -1,5 +1,5 @@
 // rene-integration-upgraded.js
-// UPGRADED Integration for René with 4 mod lanes and pattern system
+// UPGRADED Integration for René with 4 mod lanes, pattern system, and Pattern/Edit modes
 
 import { ReneSequencer } from './ReneSequencer.js';
 import { RenePatternSystem } from './RenePatternSystem.js';
@@ -9,7 +9,7 @@ import {
   updateCurrentStepHighlight, 
   clearAllStepHighlights,
   updateKnobRotation
-} from './rene-ui-enhanced-upgraded.js';
+} from './rene-ui-enhanced.js';
 
 // René mode state and components
 let reneMode = false;
@@ -20,6 +20,9 @@ let envelopeVCA = null;
 // UPGRADED: 4 mod destinations
 let modDestinations = [null, null, null, null];
 let modDepths = [0.5, 0.5, 0.5, 0.5];
+
+// Pattern mode state
+let patternMode = false; // false = Edit Mode, true = Pattern Mode
 
 /**
  * Initialize René mode with pattern system
@@ -85,12 +88,15 @@ export async function initReneMode(app) {
     }
   });
   
-  // UPGRADED: Create pattern system
+  // UPGRADED: Create pattern system with live UI update callback
   renePatternSystem = new RenePatternSystem(reneSequencer, {
     onPatternRecall: (index) => {
-      syncReneUIFromState();
-      updatePatternUI();
-      console.log(`✓ UI updated after pattern ${index + 1} recall`);
+      // In Pattern Mode, sync UI whenever pattern changes
+      if (patternMode) {
+        syncReneUIFromState();
+        updatePatternUI();
+        console.log(`✓ UI updated for pattern ${index + 1}`);
+      }
     }
   });
   
@@ -104,6 +110,112 @@ export async function initReneMode(app) {
   bindReneControls(app);
   
   console.log('✓ UPGRADED René mode initialized');
+}
+
+/**
+ * Toggle between Pattern Mode and Edit Mode
+ */
+function setPatternMode(enabled) {
+  patternMode = enabled;
+  
+  const editModeBtn = document.getElementById('patternEditModeBtn');
+  const patternModeBtn = document.getElementById('patternPlaybackModeBtn');
+  const modeIndicator = document.getElementById('reneModeIndicator');
+  const reneMainContent = document.querySelector('.rene-main-content');
+  
+  if (enabled) {
+    // PATTERN MODE: UI syncs with playing patterns
+    editModeBtn?.classList.remove('active');
+    patternModeBtn?.classList.add('active');
+    
+    if (modeIndicator) {
+      modeIndicator.textContent = '⏵ Pattern Mode';
+      modeIndicator.className = 'mode-indicator pattern-mode';
+    }
+    
+    if (reneMainContent) {
+      reneMainContent.classList.add('pattern-mode');
+      reneMainContent.classList.remove('edit-mode');
+    }
+    
+    // Sync UI with current pattern
+    if (renePatternSystem && !renePatternSystem.isPatternEmpty(renePatternSystem.currentPatternIndex)) {
+      syncReneUIFromState();
+      updatePatternUI();
+    }
+    
+    console.log('▶ Pattern Mode: UI syncs with patterns');
+  } else {
+    // EDIT MODE: Live editing, UI controls work normally
+    editModeBtn?.classList.add('active');
+    patternModeBtn?.classList.remove('active');
+    
+    if (modeIndicator) {
+      modeIndicator.textContent = '✎ Edit Mode';
+      modeIndicator.className = 'mode-indicator edit-mode';
+    }
+    
+    if (reneMainContent) {
+      reneMainContent.classList.add('edit-mode');
+      reneMainContent.classList.remove('pattern-mode');
+    }
+    
+    console.log('✎ Edit Mode: Live René editing');
+  }
+}
+
+/**
+ * Reset to blank/live mode - exits patterns and loads default state
+ */
+function resetToBlankMode() {
+  // Stop playback
+  if (renePatternSystem) {
+    renePatternSystem.setPlaybackEnabled(false);
+    const playbackBtn = document.getElementById('patternPlaybackBtn');
+    if (playbackBtn) {
+      playbackBtn.textContent = '▶ Enable Playback';
+      playbackBtn.classList.remove('active');
+    }
+  }
+  
+  // Enter Edit Mode
+  setPatternMode(false);
+  
+  // Load default blank state into René
+  if (reneSequencer) {
+    const blankState = {
+      noteValues: new Array(16).fill(0.5),
+      gateEnabled: new Array(16).fill(true),
+      modValues: [
+        new Array(16).fill(0),
+        new Array(16).fill(0),
+        new Array(16).fill(0),
+        new Array(16).fill(0)
+      ],
+      noteLength: 16,
+      gateLength: 16,
+      modLengths: [16, 16, 16, 16],
+      noteDiv: '1/4',
+      gateDiv: '1/4',
+      modDivs: ['1/4', '1/4', '1/4', '1/4'],
+      snakePattern: 0,
+      playbackMode: 'forward',
+      stepEnabled: new Array(16).fill(true),
+      tempo: 120
+    };
+    
+    reneSequencer.setState(blankState);
+    syncReneUIFromState();
+  }
+  
+  // Clear pattern selection visuals
+  document.querySelectorAll('.pattern-slot').forEach(slot => {
+    slot.classList.remove('selected', 'playing');
+  });
+  
+  updatePatternUI();
+  
+  console.log('⚪ Blank Mode: Ready for live playing');
 }
 
 /**
@@ -139,7 +251,7 @@ function initPatternSystemUI(app) {
     
     patternGrid.appendChild(slot);
     
-    // SINGLE CLICK: Select pattern (for Set/Copy/Paste operations)
+    // SINGLE CLICK: Select and preview pattern
     slot.addEventListener('click', (e) => {
       if (e.target.classList.contains('pattern-repeats-input')) return;
       
@@ -150,17 +262,26 @@ function initPatternSystemUI(app) {
       slot.classList.add('selected');
       selectedPatternIndex = i;
       
-      console.log(`Pattern ${i + 1} selected`);
+      // PREVIEW: Load pattern into René and sync UI
+      if (!renePatternSystem.isPatternEmpty(i)) {
+        renePatternSystem.recallPattern(i);
+        syncReneUIFromState();
+        updatePatternUI();
+        console.log(`Pattern ${i + 1} previewed`);
+      } else {
+        console.log(`Pattern ${i + 1} selected (empty)`);
+      }
     });
     
-    // DOUBLE CLICK: Recall pattern (load into René)
+    // DOUBLE CLICK: Recall pattern and enter Pattern Mode
     slot.addEventListener('dblclick', (e) => {
       if (e.target.classList.contains('pattern-repeats-input')) return;
       if (renePatternSystem && !renePatternSystem.isPatternEmpty(i)) {
         renePatternSystem.recallPattern(i);
-        syncReneUIFromState(); // Sync UI with new state
+        syncReneUIFromState();
         updatePatternUI();
-        console.log(`Pattern ${i + 1} recalled and UI updated`);
+        setPatternMode(true); // Enter Pattern Mode
+        console.log(`Pattern ${i + 1} recalled - Pattern Mode enabled`);
       }
     });
   }
@@ -220,6 +341,20 @@ function initPatternSystemUI(app) {
     }
   });
   
+  // Mode toggle buttons
+  document.getElementById('patternEditModeBtn')?.addEventListener('click', () => {
+    setPatternMode(false); // Edit Mode
+  });
+  
+  document.getElementById('patternPlaybackModeBtn')?.addEventListener('click', () => {
+    setPatternMode(true); // Pattern Mode
+  });
+  
+  // Blank button - reset to live mode
+  document.getElementById('patternBlankBtn')?.addEventListener('click', () => {
+    resetToBlankMode();
+  });
+  
   // Playback toggle
   const playbackBtn = document.getElementById('patternPlaybackBtn');
   playbackBtn?.addEventListener('click', () => {
@@ -230,6 +365,11 @@ function initPatternSystemUI(app) {
     
     playbackBtn.textContent = isEnabled ? '⏸ Disable Playback' : '▶ Enable Playback';
     playbackBtn.classList.toggle('active', isEnabled);
+    
+    // Auto-enter Pattern Mode when enabling playback
+    if (isEnabled) {
+      setPatternMode(true);
+    }
   });
   
   // Playback mode buttons
@@ -247,6 +387,9 @@ function initPatternSystemUI(app) {
     });
   });
   
+  // Set Edit Mode by default
+  setPatternMode(false);
+  
   console.log('✓ Pattern system UI initialized');
 }
 
@@ -257,13 +400,17 @@ function updatePatternUI() {
   if (!renePatternSystem) return;
   
   const info = renePatternSystem.getAllPatternInfo();
+  const playbackState = renePatternSystem.getPlaybackState();
   
   info.forEach((pattern, i) => {
     const slot = document.querySelector(`.pattern-slot[data-index="${i}"]`);
     if (!slot) return;
     
     slot.classList.toggle('empty', pattern.isEmpty);
-    slot.classList.toggle('current', pattern.isCurrent);
+    
+    // Show 'playing' state only when playback is enabled
+    const isPlaying = playbackState.enabled && pattern.isCurrent;
+    slot.classList.toggle('playing', isPlaying);
     
     const nameDisplay = slot.querySelector('.pattern-name');
     if (nameDisplay) {
@@ -275,6 +422,14 @@ function updatePatternUI() {
       repeatsInput.value = pattern.repeats;
     }
   });
+  
+  // Update playback indicator if in pattern mode
+  if (patternMode && playbackState.enabled) {
+    const indicator = document.getElementById('reneModeIndicator');
+    if (indicator) {
+      indicator.textContent = `⏵ Pattern ${playbackState.currentPattern + 1} (${playbackState.repeatCount + 1}/${playbackState.maxRepeats})`;
+    }
+  }
 }
 
 /**
@@ -291,6 +446,9 @@ function syncReneUIFromState() {
     const cell = document.querySelector(`#noteGrid [data-step="${i}"]`);
     if (cell) {
       updateKnobRotation(cell, state.noteValues[i]);
+      const valueDisplay = cell.querySelector('.knob-value');
+      if (valueDisplay) valueDisplay.textContent = state.noteValues[i].toFixed(2);
+      cell.dataset.value = state.noteValues[i];
     }
   }
   
@@ -298,11 +456,10 @@ function syncReneUIFromState() {
   for (let i = 0; i < 16; i++) {
     const cell = document.querySelector(`#gateGrid [data-step="${i}"]`);
     if (cell) {
-      if (state.gateEnabled[i]) {
-        cell.classList.add('on');
-      } else {
-        cell.classList.remove('on');
-      }
+      const isEnabled = state.gateEnabled[i];
+      cell.classList.toggle('active', isEnabled);
+      const checkbox = cell.querySelector('.gate-checkbox');
+      if (checkbox) checkbox.checked = isEnabled;
     }
   }
   
@@ -312,48 +469,51 @@ function syncReneUIFromState() {
       const cell = document.querySelector(`#modGrid${lane} [data-step="${step}"]`);
       if (cell) {
         updateKnobRotation(cell, state.modValues[lane][step]);
+        const valueDisplay = cell.querySelector('.knob-value');
+        if (valueDisplay) valueDisplay.textContent = state.modValues[lane][step].toFixed(2);
+        cell.dataset.value = state.modValues[lane][step];
       }
     }
   }
   
   // Update length sliders
-  const noteLengthSlider = document.getElementById('noteLength');
+  const noteLengthSlider = document.getElementById('noteLaneLength');
   if (noteLengthSlider) {
     noteLengthSlider.value = state.noteLength;
-    const display = document.getElementById('noteLengthDisplay');
+    const display = document.getElementById('noteLaneLengthValue');
     if (display) display.textContent = state.noteLength;
   }
   
-  const gateLengthSlider = document.getElementById('gateLength');
+  const gateLengthSlider = document.getElementById('gateLaneLength');
   if (gateLengthSlider) {
     gateLengthSlider.value = state.gateLength;
-    const display = document.getElementById('gateLengthDisplay');
+    const display = document.getElementById('gateLaneLengthValue');
     if (display) display.textContent = state.gateLength;
   }
   
   for (let i = 0; i < 4; i++) {
-    const modLengthSlider = document.getElementById(`modLength${i}`);
+    const modLengthSlider = document.getElementById(`mod${i}LaneLength`);
     if (modLengthSlider) {
       modLengthSlider.value = state.modLengths[i];
-      const display = document.getElementById(`modLengthDisplay${i}`);
+      const display = document.getElementById(`mod${i}LaneLengthValue`);
       if (display) display.textContent = state.modLengths[i];
     }
   }
   
   // Update division dropdowns
-  const noteDivSelect = document.getElementById('noteDiv');
+  const noteDivSelect = document.getElementById('noteLaneDiv');
   if (noteDivSelect) noteDivSelect.value = state.noteDiv;
   
-  const gateDivSelect = document.getElementById('gateDiv');
+  const gateDivSelect = document.getElementById('gateLaneDiv');
   if (gateDivSelect) gateDivSelect.value = state.gateDiv;
   
   for (let i = 0; i < 4; i++) {
-    const modDivSelect = document.getElementById(`modDiv${i}`);
+    const modDivSelect = document.getElementById(`mod${i}LaneDiv`);
     if (modDivSelect) modDivSelect.value = state.modDivs[i];
   }
   
   // Update snake pattern
-  const snakeSelect = document.getElementById('snakePattern');
+  const snakeSelect = document.getElementById('snakePatternSelect');
   if (snakeSelect) snakeSelect.value = state.snakePattern;
   
   // Update step enabled states
@@ -365,14 +525,15 @@ function syncReneUIFromState() {
   }
   
   // Update playback mode
-  const playbackModeSelect = document.getElementById('playbackMode');
-  if (playbackModeSelect) playbackModeSelect.value = state.playbackMode;
+  document.querySelectorAll('.mode-toggle-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.playbackMode);
+  });
   
   // Update tempo
-  const tempoSlider = document.getElementById('tempo');
+  const tempoSlider = document.getElementById('reneTempo');
   if (tempoSlider) {
     tempoSlider.value = state.tempo;
-    const display = document.getElementById('tempoDisplay');
+    const display = document.getElementById('reneTempoValue');
     if (display) display.textContent = `${state.tempo} BPM`;
   }
   
@@ -559,7 +720,7 @@ function bindReneControls(app) {
   
   tempoSlider?.addEventListener('input', (e) => {
     const bpm = parseInt(e.target.value);
-    tempoValue.textContent = bpm;
+    tempoValue.textContent = `${bpm} BPM`;
     
     if (reneSequencer) {
       reneSequencer.setTempo(bpm);
