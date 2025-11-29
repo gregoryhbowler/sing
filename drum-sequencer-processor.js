@@ -41,66 +41,35 @@ class DrumSequencerProcessor extends AudioWorkletProcessor {
     //this.generatePattern();
     
     // Message handling
-    this.port.onmessage = (event) => {
-      const { type } = event.data;
-      
-      if (type === 'randomizePattern') {
-        this.generatePattern();
-      } else if (type === 'randomizeGroove') {
-        this.generateGroove();
-      } else if (type === 'randomizeKickPattern') {
-        this.generateKickPattern();
-      } else if (type === 'randomizeSnarePattern') {
-        this.generateSnarePattern();
-      } else if (type === 'randomizeHatPattern') {
-        this.generateHatPattern();
-      }
-    };
+this.port.onmessage = (event) => {
+  const { type } = event.data;
+  
+  if (type === 'setStep') {
+    const { voice, step, value } = event.data;
+    if (voice === 'kick') {
+      this.kickPattern[step] = value ? 1 : 0;
+    } else if (voice === 'snare') {
+      this.snarePattern[step] = value ? 1 : 0;
+    } else if (voice === 'hat') {
+      this.hatPattern[step] = value ? 1 : 0;
+    }
+  } else if (type === 'clearPattern') {
+    const { voice } = event.data;
+    if (voice === 'kick' || voice === 'all') {
+      this.kickPattern.fill(0);
+    }
+    if (voice === 'snare' || voice === 'all') {
+      this.snarePattern.fill(0);
+    }
+    if (voice === 'hat' || voice === 'all') {
+      this.hatPattern.fill(0);
+    }
+  }
+};
     
     this.sampleCount = 0;
   }
 
-  //generatePattern() {
-  //  this.generateKickPattern();
-  //  this.generateSnarePattern();
-  //  this.generateHatPattern();
- // }
-
-  //generateKickPattern() {
-  //  for (let i = 0; i < 16; i++) {
-      // Bias kick towards downbeats (0, 4, 8, 12)
-  //    const kickProb = (i % 4 === 0) ? 0.8 : 0.3;
-   //   this.kickPattern[i] = Math.random() < kickProb ? 1 : 0;
-  //  }
-  //}
-
- // generateSnarePattern() {
- //   for (let i = 0; i < 16; i++) {
- //     // Bias snare towards backbeats (4, 12)
- //     const snareProb = (i % 8 === 4) ? 0.9 : 0.2;
- //     this.snarePattern[i] = Math.random() < snareProb ? 1 : 0;
- //   }
- // }
-
- // generateHatPattern() {
- //   for (let i = 0; i < 16; i++) {
-      // Hi-hats: favor off-beats and 16th notes
-      // Even steps get higher probability
- //     const hatProb = (i % 2 === 0) ? 0.7 : 0.5;
- //     this.hatPattern[i] = Math.random() < hatProb ? 1 : 0;
- //   }
- // }
-
- // generateGroove() {
-    // Randomize the groove mask
-    // Always keep downbeat (index 0) allowed
- //   this.grooveMask = [
- //     1, 
- //     Math.random() > 0.5 ? 1 : 0, 
-  //    Math.random() > 0.5 ? 1 : 0, 
- //     Math.random() > 0.5 ? 1 : 0
- //   ];
- // }
 
   detectClock(currentSample) {
     // Detect rising edge
