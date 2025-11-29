@@ -36,14 +36,21 @@ export class LFONode extends AudioWorkletNode {
   }
 
   createDestinationChain() {
+    const offset = this.context.createConstantSource();
+    const modeOffset = this.context.createConstantSource();
+    
+    // Start ConstantSources once and keep them running
+    offset.start();
+    modeOffset.start();
+    
     return {
       enabled: false,
       param: null,
       depth: this.context.createGain(),
-      offset: this.context.createConstantSource(),
+      offset: offset,
       mode: 0, // 0=unipolar, 1=bipolar, 2=inv unipolar, 3=inv bipolar
       modeGain: this.context.createGain(),
-      modeOffset: this.context.createConstantSource()
+      modeOffset: modeOffset
     };
   }
 
@@ -129,9 +136,8 @@ export class LFONode extends AudioWorkletNode {
     dest.offset.offset.value = offset;
     
     // Connect signal chain: LFO → mode transform → depth → offset → destination
-    dest.offset.start();
+    // Note: ConstantSources are already started in createDestinationChain()
     this.output.connect(dest.modeGain);
-    dest.modeOffset.start();
     dest.modeOffset.connect(dest.modeGain.gain);
     dest.modeGain.connect(dest.depth);
     dest.depth.connect(param);
@@ -216,7 +222,7 @@ export class LFONode extends AudioWorkletNode {
   }
 
   /**
-   * Disconnect a destination
+   * Disconnect a destination (but keep ConstantSources running)
    */
   disconnectDestination(destIndex) {
     if (destIndex !== 0 && destIndex !== 1) return;
@@ -226,12 +232,9 @@ export class LFONode extends AudioWorkletNode {
       this.output.disconnect(dest.modeGain);
       dest.modeGain.disconnect();
       dest.depth.disconnect();
-      if (dest.offset.stop) {
-        dest.offset.stop();
-      }
-      if (dest.modeOffset.stop) {
-        dest.modeOffset.stop();
-      }
+      dest.offset.disconnect();
+      dest.modeOffset.disconnect();
+      // Note: We do NOT stop the ConstantSources - they stay running
     } catch (e) {
       // Already disconnected
     }
@@ -261,6 +264,17 @@ export class LFONode extends AudioWorkletNode {
   dispose() {
     this.disconnectDestination(0);
     this.disconnectDestination(1);
+    
+    // Now we can stop the ConstantSources
+    try {
+      this.destinations[0].offset.stop();
+      this.destinations[0].modeOffset.stop();
+      this.destinations[1].offset.stop();
+      this.destinations[1].modeOffset.stop();
+    } catch (e) {
+      // Already stopped
+    }
+    
     this.disconnect();
     this.output.disconnect();
   }
