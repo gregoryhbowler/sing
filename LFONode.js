@@ -38,10 +38,14 @@ export class LFONode extends AudioWorkletNode {
   createDestinationChain() {
     const offset = this.context.createConstantSource();
     const modeOffset = this.context.createConstantSource();
+    const modeSum = this.context.createGain();
     
     // Start ConstantSources once and keep them running
     offset.start();
     modeOffset.start();
+    
+    // modeSum is used to add the modeOffset to the scaled LFO signal
+    modeSum.gain.value = 1.0; // Unity gain for pass-through
     
     return {
       enabled: false,
@@ -50,7 +54,8 @@ export class LFONode extends AudioWorkletNode {
       offset: offset,
       mode: 0, // 0=unipolar, 1=bipolar, 2=inv unipolar, 3=inv bipolar
       modeGain: this.context.createGain(),
-      modeOffset: modeOffset
+      modeOffset: modeOffset,
+      modeSum: modeSum  // New: summing node for mode offset
     };
   }
 
@@ -135,19 +140,23 @@ export class LFONode extends AudioWorkletNode {
     dest.depth.gain.value = depth;
     dest.offset.offset.value = offset;
     
-    // Connect signal chain: LFO → mode transform → depth → offset → destination
+    // Connect signal chain: LFO → modeGain (scale) → modeSum (add offset) → depth → param
     // Note: ConstantSources are already started in createDestinationChain()
-    this.output.connect(dest.modeGain);
-    dest.modeOffset.connect(dest.modeGain.gain);
-    dest.modeGain.connect(dest.depth);
-    dest.depth.connect(param);
-    dest.offset.connect(param);
+    this.output.connect(dest.modeGain);           // LFO to scaling
+    dest.modeGain.connect(dest.modeSum);          // Scaled signal to summer
+    dest.modeOffset.connect(dest.modeSum);        // Add mode offset (for unipolar, etc.)
+    dest.modeSum.connect(dest.depth);             // Combined signal to depth control
+    dest.depth.connect(param);                    // Depth-scaled modulation to destination
+    dest.offset.connect(param);                   // User offset also to destination
     
     console.log(`LFO ${this.lfoIndex + 1} destination ${destIndex === 0 ? 'A' : 'B'} connected`);
   }
 
   configureModeTransform(destIndex, mode) {
     const dest = this.destinations[destIndex];
+    
+    // Signal flow: LFO → (multiply by modeGain) → (add modeOffset) → depth → destination
+    // This properly implements the mode transformations using separate scale and offset stages
     
     switch (mode) {
       case 0: // Unipolar (0 → 1): (x + 1) / 2
@@ -231,6 +240,7 @@ export class LFONode extends AudioWorkletNode {
     try {
       this.output.disconnect(dest.modeGain);
       dest.modeGain.disconnect();
+      dest.modeSum.disconnect();    // Disconnect the summing node
       dest.depth.disconnect();
       dest.offset.disconnect();
       dest.modeOffset.disconnect();
