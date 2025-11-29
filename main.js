@@ -282,32 +282,28 @@ class Phase5App {
   }
 
   setupDrumRouting() {
-    // Connect sequencer outputs to synth inputs
-    this.drumSequencer.getKickTriggerOutput().connect(this.drumSynth.getKickTriggerInput());
-    this.drumSequencer.getSnareTriggerOutput().connect(this.drumSynth.getSnareTriggerInput());
-    this.drumSequencer.getHatTriggerOutput().connect(this.drumSynth.getHatTriggerInput());
-    
-    // Connect synth output to master
-    this.drumSynth.getOutput().connect(this.drumMasterGain);
-    this.drumMasterGain.connect(this.masterGain);
-    
-    // Connect JF 2N to drum clock (faster than IDENTITY for proper 16th notes)
-    // With INTONE at 0.5 (unison), 2N runs at same speed as IDENTITY
-    // Increase INTONE for faster drum tempos:
-    //   - INTONE = 0.75: 1.5× speed
-    //   - INTONE = 1.0: 2× speed (overtone series)
-    // For 120 BPM drums: Set JF TIME~0.65, INTONE=1.0
-    this.jf1.get2NOutput().connect(this.jfDrumClockGain);
-    
-    // Both clock sources feed into drum sequencer (use gains to switch)
-    this.jfDrumClockGain.connect(this.drumSequencer.getClockInput());
-    this.reneDrumClockGain.connect(this.drumSequencer.getClockInput());
-    
-    // Set initial clock source (JF by default)
-    this.setDrumClockSource('jf');
-    
-    console.log('✓ Drum machine routing complete (using JF 2N for clock)');
-  }
+  // Connect sequencer outputs to synth inputs
+  this.drumSequencer.getKickTriggerOutput().connect(this.drumSynth.getKickTriggerInput());
+  this.drumSequencer.getSnareTriggerOutput().connect(this.drumSynth.getSnareTriggerInput());
+  this.drumSequencer.getHatTriggerOutput().connect(this.drumSynth.getHatTriggerInput());
+  
+  // Connect synth output to master
+  this.drumSynth.getOutput().connect(this.drumMasterGain);
+  this.drumMasterGain.connect(this.masterGain);
+  
+  // Connect JF 4N to drum clock (4× faster than IDENTITY for 16th notes)
+  // With INTONE at overtone mode, 4N provides the 16th note subdivisions
+  this.jf1.get4NOutput().connect(this.jfDrumClockGain);
+  
+  // Both clock sources feed into drum sequencer
+  this.jfDrumClockGain.connect(this.drumSequencer.getClockInput());
+  this.reneDrumClockGain.connect(this.drumSequencer.getClockInput());
+  
+  // Set initial clock source
+  this.setDrumClockSource('jf');
+  
+  console.log('✓ Drum machine routing complete (using JF 4N for 16th note clock)');
+}
 
   setDrumClockSource(source) {
     this.drumClockSource = source;
