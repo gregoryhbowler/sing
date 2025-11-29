@@ -1,6 +1,7 @@
 // ReneSequencer.js
 // René-inspired 16-step sequencer with snake patterns and independent lane timing
 // UPGRADED: Bug fix for lane lengths + 4 mod lanes with individual destinations
+// UPDATED: Added on16thNote callback for drum machine clock
 
 export class ReneSequencer {
   constructor({
@@ -8,13 +9,15 @@ export class ReneSequencer {
     onNote,     // ({ value, time }) => void
     onGate,     // ({ isOn, time }) => void
     onMod,      // ({ laneIndex, value, time }) => void - NOW includes laneIndex
-    onNoteCycle 
+    onNoteCycle,
+    on16thNote  // NEW: ({ time }) => void - fires every 16th note for drum machine
   }) {
     this.audioContext = audioContext;
     this.onNote = onNote;
     this.onGate = onGate;
     this.onMod = onMod;
     this.onNoteCycle = onNoteCycle;
+    this.on16thNote = on16thNote;
     
     // René's own tempo (BPM)
     this.bpm = 120;
@@ -78,7 +81,7 @@ export class ReneSequencer {
       '2/2': 64     // 64 sixteenth notes (4 whole notes)
     };
     
-    console.log('✓ ReneSequencer initialized (4 mod lanes)');
+    console.log('✓ ReneSequencer initialized (4 mod lanes + 16th note clock)');
   }
   
   // ========== TEMPO & CLOCK ==========
@@ -324,6 +327,11 @@ export class ReneSequencer {
   
   processTick(time) {
     const pattern = this.getSnakePattern();
+    
+    // NEW: Fire 16th note callback for drum machine
+    if (this.on16thNote) {
+      this.on16thNote({ time });
+    }
     
     // Note lane
     this.noteDivCounter++;
