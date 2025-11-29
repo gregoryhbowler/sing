@@ -7,8 +7,9 @@ import { EnvelopeVCANode } from './EnvelopeVCANode.js';
 import { 
   initializeEnhancedReneUI, 
   updateCurrentStepHighlight, 
-  clearAllStepHighlights 
-} from './rene-ui-enhanced.js';
+  clearAllStepHighlights,
+  updateKnobRotation
+} from './rene-ui-enhanced-upgraded.js';
 
 // René mode state and components
 let reneMode = false;
@@ -85,7 +86,13 @@ export async function initReneMode(app) {
   });
   
   // UPGRADED: Create pattern system
-  renePatternSystem = new RenePatternSystem(reneSequencer);
+  renePatternSystem = new RenePatternSystem(reneSequencer, {
+    onPatternRecall: (index) => {
+      syncReneUIFromState();
+      updatePatternUI();
+      console.log(`✓ UI updated after pattern ${index + 1} recall`);
+    }
+  });
   
   // Initialize enhanced UI
   initializeEnhancedReneUI(reneSequencer);
@@ -151,8 +158,9 @@ function initPatternSystemUI(app) {
       if (e.target.classList.contains('pattern-repeats-input')) return;
       if (renePatternSystem && !renePatternSystem.isPatternEmpty(i)) {
         renePatternSystem.recallPattern(i);
+        syncReneUIFromState(); // Sync UI with new state
         updatePatternUI();
-        console.log(`Pattern ${i + 1} recalled`);
+        console.log(`Pattern ${i + 1} recalled and UI updated`);
       }
     });
   }
@@ -267,6 +275,108 @@ function updatePatternUI() {
       repeatsInput.value = pattern.repeats;
     }
   });
+}
+
+/**
+ * Sync René UI elements with sequencer state
+ * Called after pattern recall to update all visual controls
+ */
+function syncReneUIFromState() {
+  if (!reneSequencer) return;
+  
+  const state = reneSequencer.getState();
+  
+  // Update note values (16 knobs)
+  for (let i = 0; i < 16; i++) {
+    const cell = document.querySelector(`#noteGrid [data-step="${i}"]`);
+    if (cell) {
+      updateKnobRotation(cell, state.noteValues[i]);
+    }
+  }
+  
+  // Update gate enabled states (16 buttons)
+  for (let i = 0; i < 16; i++) {
+    const cell = document.querySelector(`#gateGrid [data-step="${i}"]`);
+    if (cell) {
+      if (state.gateEnabled[i]) {
+        cell.classList.add('on');
+      } else {
+        cell.classList.remove('on');
+      }
+    }
+  }
+  
+  // Update mod values for all 4 lanes
+  for (let lane = 0; lane < 4; lane++) {
+    for (let step = 0; step < 16; step++) {
+      const cell = document.querySelector(`#modGrid${lane} [data-step="${step}"]`);
+      if (cell) {
+        updateKnobRotation(cell, state.modValues[lane][step]);
+      }
+    }
+  }
+  
+  // Update length sliders
+  const noteLengthSlider = document.getElementById('noteLength');
+  if (noteLengthSlider) {
+    noteLengthSlider.value = state.noteLength;
+    const display = document.getElementById('noteLengthDisplay');
+    if (display) display.textContent = state.noteLength;
+  }
+  
+  const gateLengthSlider = document.getElementById('gateLength');
+  if (gateLengthSlider) {
+    gateLengthSlider.value = state.gateLength;
+    const display = document.getElementById('gateLengthDisplay');
+    if (display) display.textContent = state.gateLength;
+  }
+  
+  for (let i = 0; i < 4; i++) {
+    const modLengthSlider = document.getElementById(`modLength${i}`);
+    if (modLengthSlider) {
+      modLengthSlider.value = state.modLengths[i];
+      const display = document.getElementById(`modLengthDisplay${i}`);
+      if (display) display.textContent = state.modLengths[i];
+    }
+  }
+  
+  // Update division dropdowns
+  const noteDivSelect = document.getElementById('noteDiv');
+  if (noteDivSelect) noteDivSelect.value = state.noteDiv;
+  
+  const gateDivSelect = document.getElementById('gateDiv');
+  if (gateDivSelect) gateDivSelect.value = state.gateDiv;
+  
+  for (let i = 0; i < 4; i++) {
+    const modDivSelect = document.getElementById(`modDiv${i}`);
+    if (modDivSelect) modDivSelect.value = state.modDivs[i];
+  }
+  
+  // Update snake pattern
+  const snakeSelect = document.getElementById('snakePattern');
+  if (snakeSelect) snakeSelect.value = state.snakePattern;
+  
+  // Update step enabled states
+  for (let i = 0; i < 16; i++) {
+    const checkbox = document.querySelector(`input[name="stepEnabled"][value="${i}"]`);
+    if (checkbox) {
+      checkbox.checked = state.stepEnabled[i];
+    }
+  }
+  
+  // Update playback mode
+  const playbackModeSelect = document.getElementById('playbackMode');
+  if (playbackModeSelect) playbackModeSelect.value = state.playbackMode;
+  
+  // Update tempo
+  const tempoSlider = document.getElementById('tempo');
+  if (tempoSlider) {
+    tempoSlider.value = state.tempo;
+    const display = document.getElementById('tempoDisplay');
+    if (display) display.textContent = `${state.tempo} BPM`;
+  }
+  
+  console.log('✓ René UI synced with pattern state');
 }
 
 /**
