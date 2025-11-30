@@ -14,6 +14,57 @@
   <link rel="stylesheet" href="effects-styles.css">
 </head>
 <body>
+
+  <!-- WAV Recorder Sidebar - Always visible on the right side -->
+<div class="wav-recorder-sidebar idle" id="wavRecorderSidebar">
+  
+  <!-- Title -->
+  <div class="recorder-title">REC</div>
+  
+  <!-- Recording Indicator Light -->
+  <div class="recorder-indicator" id="recorderIndicator"></div>
+  
+  <!-- Time Display -->
+  <div class="recorder-time" id="recorderTime">00:00.00</div>
+  
+  <!-- Status Text -->
+  <div class="recorder-status" id="recorderStatus">Ready</div>
+  
+  <!-- Control Buttons -->
+  <div class="recorder-buttons">
+    
+    <!-- Record Button (shown when idle) -->
+    <button class="recorder-btn record" id="recorderRecordBtn" title="Start Recording">
+      <span class="btn-icon">●</span>
+      <span class="recorder-tooltip">Record</span>
+    </button>
+    
+    <!-- Pause Button (shown when recording) -->
+    <button class="recorder-btn pause" id="recorderPauseBtn" title="Pause Recording">
+      <span class="btn-icon">⏸</span>
+      <span class="recorder-tooltip">Pause</span>
+    </button>
+    
+    <!-- Stop Button (shown when recording or paused) -->
+    <button class="recorder-btn stop" id="recorderStopBtn" title="Stop & Save">
+      <span class="btn-icon">⏹</span>
+      <span class="recorder-tooltip">Stop</span>
+    </button>
+    
+    <!-- Download Button (shown after recording) -->
+    <button class="recorder-btn download" id="recorderDownloadBtn" title="Download WAV">
+      <span class="btn-icon">⬇</span>
+      <span class="recorder-tooltip">Download</span>
+    </button>
+    
+    <!-- Cancel Button (shown when recording or paused) -->
+    <button class="recorder-btn cancel" id="recorderCancelBtn" title="Cancel Recording">
+      <span class="btn-icon">✕</span>
+    </button>
+    
+  </div>
+  
+</div>
   <div class="header">
     <div class="logo">
       <div class="logo-main">PHASE 5</div>
