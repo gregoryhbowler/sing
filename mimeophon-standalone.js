@@ -969,6 +969,13 @@ registerProcessor('mimeophon-processor', MimeophonProcessor);
                         </div>
                         <input type="range" id="mimeophon-halo-slider" min="0" max="1" step="0.01" value="0">
                     </div>
+                    <div class="mimeophon-param">
+                        <div class="mimeophon-param-header">
+                            <span class="mimeophon-param-label">mix</span>
+                            <span class="mimeophon-param-value" id="mimeophon-mix">50%</span>
+                        </div>
+                        <input type="range" id="mimeophon-mix-slider" min="0" max="1" step="0.01" value="0.5">
+                    </div>
                     <div class="mimeophon-toggles">
                         <button class="mimeophon-toggle-btn" id="mimeophon-pingpong">ping-pong</button>
                         <button class="mimeophon-toggle-btn" id="mimeophon-swap">swap</button>
@@ -1103,6 +1110,15 @@ registerProcessor('mimeophon-processor', MimeophonProcessor);
             const val = parseFloat(e.target.value);
             haloValue.textContent = Math.round(val * 100) + '%';
             this.setHalo(val);
+        });
+
+        // Mix
+        const mixSlider = this.uiContainer.querySelector('#mimeophon-mix-slider');
+        const mixValue = this.uiContainer.querySelector('#mimeophon-mix');
+        mixSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            mixValue.textContent = Math.round(val * 100) + '%';
+            this.setMix(val);
         });
         
         // Toggles
