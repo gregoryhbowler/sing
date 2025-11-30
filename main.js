@@ -1,4 +1,4 @@
-// main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine
+// main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine + Effects Chain
 // FIXED: Drums now audible with default pattern, proper clock source, and better UI initialization
 
 import { JustFriendsNode } from './JustFriendsNode.js';
@@ -13,6 +13,18 @@ import { EnvelopeVCANode } from './EnvelopeVCANode.js';
 import { initReneMode, toggleReneMode } from './rene-integration-redesigned.js';
 import { DrumSynthNode } from './DrumSynthNode.js';
 import { DrumSequencerNode } from './DrumSequencerNode.js';
+
+// ADD EFFECTS IMPORTS
+
+import { DJEqualizerUI } from './DJEqualizerUI.js';
+import { SaturationEffectUI } from './SaturationEffectUI.js';
+import { StandaloneMimeophon } from './mimeophon-standalone.js';
+import GreyholeNode from './GreyholeNode.js';
+import { ZitaReverb } from './ZitaReverb.js';
+
+// Core audio classes (needed for direct instantiation)
+import { DJEqualizer } from './DJEqualizer.js';
+import { SaturationEffect } from './SaturationEffect.js';
 
 class Phase5App {
   constructor() {
@@ -49,6 +61,17 @@ class Phase5App {
     this.reneDrumClockGain = null;
     this.reneClockBuffer = null;
     this.transposeStepClockGain = null;
+    
+    // Effects chain
+    this.djEQ = null;
+    this.saturation = null;
+    this.mimeophon = null;
+    this.greyhole = null;
+    this.zitaReverb = null;
+    
+    // Effects routing
+    this.effectsInput = null;
+    this.effectsOutput = null;
     
     // Oscillator selection state
     this.activeOscillator = 'mangrove';
@@ -91,135 +114,188 @@ class Phase5App {
 
   async init() {
     try {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Load AudioWorklet processors
-      await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
-      await this.audioContext.audioWorklet.addModule('./just-friends-osc-processor.js');
-      await this.audioContext.audioWorklet.addModule('./quantizer-processor.js');
-      await this.audioContext.audioWorklet.addModule('./transpose-sequencer-processor.js');
-      await this.audioContext.audioWorklet.addModule('./mangrove-processor.js');
-      await this.audioContext.audioWorklet.addModule('./three-sisters-processor.js');
-      await this.audioContext.audioWorklet.addModule('./modulation-matrix-processor.js');
-      await this.audioContext.audioWorklet.addModule('./envelope-processor.js');
-      await this.audioContext.audioWorklet.addModule('./lfo-processor.js');
-      
-      // Load drum machine worklets
-      await this.audioContext.audioWorklet.addModule('./drum-synth-processor.js');
-      await this.audioContext.audioWorklet.addModule('./drum-sequencer-processor.js');
-      
-      console.log('%c✓ All AudioWorklets loaded including drums', 'color: green; font-weight: bold');
-      
-      await new Promise(resolve => setTimeout(resolve, 200));
+  this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  
+  // Load AudioWorklet processors
+  await this.audioContext.audioWorklet.addModule('./just-friends-processor.js');
+  await this.audioContext.audioWorklet.addModule('./just-friends-osc-processor.js');
+  await this.audioContext.audioWorklet.addModule('./quantizer-processor.js');
+  await this.audioContext.audioWorklet.addModule('./transpose-sequencer-processor.js');
+  await this.audioContext.audioWorklet.addModule('./mangrove-processor.js');
+  await this.audioContext.audioWorklet.addModule('./three-sisters-processor.js');
+  await this.audioContext.audioWorklet.addModule('./modulation-matrix-processor.js');
+  await this.audioContext.audioWorklet.addModule('./envelope-processor.js');
+  await this.audioContext.audioWorklet.addModule('./lfo-processor.js');
+  
+  // Load drum machine worklets
+  await this.audioContext.audioWorklet.addModule('./drum-synth-processor.js');
+  await this.audioContext.audioWorklet.addModule('./drum-sequencer-processor.js');
+  
+  // Load Greyhole processor
+  await this.audioContext.audioWorklet.addModule('./greyhole-processor.js');
+  
+  console.log('%c✓ All AudioWorklets loaded including effects', 'color: green; font-weight: bold');
+  
+  await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Create module instances
-      this.jf1 = new JustFriendsNode(this.audioContext);
-      this.jfOsc = new JustFriendsOscNode(this.audioContext);
-      await new Promise(resolve => setTimeout(resolve, 10));
-      this.transposeSeq = new TransposeSequencerNode(this.audioContext);
-      this.quantizer = new QuantizerNode(this.audioContext);
-      this.envelopeVCA = new EnvelopeVCANode(this.audioContext);
-      
-      // Create 7 LFOs
-      for (let i = 0; i < 7; i++) {
-        this.lfos.push(new LFONode(this.audioContext, i));
-      }
-      console.log('✓ 7 LFOs created');
-      
-      this.jf1ToQuantGain = this.audioContext.createGain();
-      this.jf1ToQuantGain.gain.value = 1.0;
-      
-      this.mangroveA = new MangroveNode(this.audioContext);
-      this.mangroveB = new MangroveNode(this.audioContext);
-      this.mangroveC = new MangroveNode(this.audioContext);
-      this.threeSisters = new ThreeSistersNode(this.audioContext);
-      this.modMatrix = new ModulationMatrixNode(this.audioContext);
-      this.masterGain = this.audioContext.createGain();
-      this.masterGain.gain.value = 0.3;
+  // Create module instances
+  this.jf1 = new JustFriendsNode(this.audioContext);
+  this.jfOsc = new JustFriendsOscNode(this.audioContext);
+  await new Promise(resolve => setTimeout(resolve, 10));
+  this.transposeSeq = new TransposeSequencerNode(this.audioContext);
+  this.quantizer = new QuantizerNode(this.audioContext);
+  this.envelopeVCA = new EnvelopeVCANode(this.audioContext);
+  
+  // Create 7 LFOs
+  for (let i = 0; i < 7; i++) {
+    this.lfos.push(new LFONode(this.audioContext, i));
+  }
+  console.log('✓ 7 LFOs created');
+  
+  this.jf1ToQuantGain = this.audioContext.createGain();
+  this.jf1ToQuantGain.gain.value = 1.0;
+  
+  this.mangroveA = new MangroveNode(this.audioContext);
+  this.mangroveB = new MangroveNode(this.audioContext);
+  this.mangroveC = new MangroveNode(this.audioContext);
+  this.threeSisters = new ThreeSistersNode(this.audioContext);
+  this.modMatrix = new ModulationMatrixNode(this.audioContext);
+  this.masterGain = this.audioContext.createGain();
+  this.masterGain.gain.value = 0.3;
 
-      this.mangroveAGain = this.audioContext.createGain();
-      this.mangroveAGain.gain.value = 1.0;
-      this.jfOscGain = this.audioContext.createGain();
-      this.jfOscGain.gain.value = 0.0;
+  this.mangroveAGain = this.audioContext.createGain();
+  this.mangroveAGain.gain.value = 1.0;
+  this.jfOscGain = this.audioContext.createGain();
+  this.jfOscGain.gain.value = 0.0;
 
-      this.fmGainB = this.audioContext.createGain();
-      this.fmGainB.gain.value = 0.0;
-      this.fmExpGain = this.audioContext.createGain();
-      this.fmExpGain.gain.value = 0.3;
-      this.fmLinGain = this.audioContext.createGain();
-      this.fmLinGain.gain.value = 1.0;
+  this.fmGainB = this.audioContext.createGain();
+  this.fmGainB.gain.value = 0.0;
+  this.fmExpGain = this.audioContext.createGain();
+  this.fmExpGain.gain.value = 0.3;
+  this.fmLinGain = this.audioContext.createGain();
+  this.fmLinGain.gain.value = 1.0;
 
-      this.transposeGain = this.audioContext.createGain();
-      this.transposeGain.gain.value = 12.0;
+  this.transposeGain = this.audioContext.createGain();
+  this.transposeGain.gain.value = 12.0;
 
-      this.renePitchGain = this.audioContext.createGain();
-      this.renePitchGain.gain.value = 0;
-      
-      this.renePitchSource = this.audioContext.createConstantSource();
-      this.renePitchSource.offset.value = 0;
-      this.renePitchSource.start();
+  this.renePitchGain = this.audioContext.createGain();
+  this.renePitchGain.gain.value = 0;
+  
+  this.renePitchSource = this.audioContext.createConstantSource();
+  this.renePitchSource.offset.value = 0;
+  this.renePitchSource.start();
 
-      // CREATE DRUM MACHINE
-      this.drumSequencer = new DrumSequencerNode(this.audioContext);
-      this.drumSynth = new DrumSynthNode(this.audioContext);
-      this.drumMasterGain = this.audioContext.createGain();
-      this.drumMasterGain.gain.value = 0.7;
-      
-      // Create clock pulse generators
-      this.createDrumClockSources();
+  // CREATE DRUM MACHINE
+  this.drumSequencer = new DrumSequencerNode(this.audioContext);
+  this.drumSynth = new DrumSynthNode(this.audioContext);
+  this.drumMasterGain = this.audioContext.createGain();
+  this.drumMasterGain.gain.value = 0.7;
+  
+  // Create clock pulse generators
+  this.createDrumClockSources();
 
-      this.setupScope1();
-      this.setupScope2();
+  // CREATE EFFECTS CHAIN
+  this.effectsInput = this.audioContext.createGain();
+  this.effectsOutput = this.audioContext.createGain();
+  
+  // DJ Equalizer (3-band with kill switches)
+  this.djEQ = new DJEqualizer(this.audioContext, {
+    lowFreq: 100,
+    midFreq: 1000,
+    highFreq: 5000
+  });
+  
+  // Saturation (tape/tube/transformer distortion)
+  this.saturation = new SaturationEffect(this.audioContext, {
+    mode: 'tape',
+    drive: 0,
+    bias: 0,
+    mix: 1.0,
+    harmonics: 'even'
+  });
+  
+  // Mimeophon (color delay)
+  this.mimeophon = new StandaloneMimeophon(this.audioContext);
+  await this.mimeophon.init();
+  
+  // Greyhole (diffusion reverb)
+  this.greyhole = new GreyholeNode(this.audioContext);
+  
+  // Zita Reverb (high-quality FDN reverb)
+  this.zitaReverb = new ZitaReverb(this.audioContext);
+  await this.zitaReverb.init('./zita-reverb-processor.js');
+  
+  console.log('✓ Effects chain created (EQ → Saturation → Mimeophon → Greyhole → Zita)');
 
-      // ========== SIGNAL ROUTING ==========
-      
-      // Existing routing (unchanged)
-      this.jf1.getIdentityOutput().connect(this.transposeSeq.getClockInput());
-      this.jf1.getIdentityOutput().connect(this.scope1Analyser);
-      this.scope1Analyser.connect(this.jf1ToQuantGain);
-      this.jf1ToQuantGain.connect(this.quantizer.getInput());
+  this.setupScope1();
+  this.setupScope2();
 
-      this.transposeSeq.getTransposeOutput().connect(this.transposeGain);
-      this.transposeGain.connect(this.quantizer.params.transpose);
+// ========== SIGNAL ROUTING ==========
 
-      this.renePitchSource.connect(this.renePitchGain);
-      this.renePitchGain.connect(this.quantizer.getInput());
+// Existing routing (unchanged)
+this.jf1.getIdentityOutput().connect(this.transposeSeq.getClockInput());
+this.jf1.getIdentityOutput().connect(this.scope1Analyser);
+this.scope1Analyser.connect(this.jf1ToQuantGain);
+this.jf1ToQuantGain.connect(this.quantizer.getInput());
 
-      this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
-      this.quantizer.getOutput().connect(this.jfOsc.getTimeCVInput());
+this.transposeSeq.getTransposeOutput().connect(this.transposeGain);
+this.transposeGain.connect(this.quantizer.params.transpose);
 
-      this.mangroveB.getFormantOutput().connect(this.fmGainB);
-      this.fmGainB.connect(this.fmExpGain);
-      this.fmExpGain.connect(this.mangroveA.getPitchCVInput());
-      this.fmExpGain.connect(this.jfOsc.getTimeCVInput());
-      this.fmGainB.connect(this.fmLinGain);
-      this.fmLinGain.connect(this.mangroveA.getFMInput());
-      this.fmLinGain.connect(this.jfOsc.getFMInput());
+this.renePitchSource.connect(this.renePitchGain);
+this.renePitchGain.connect(this.quantizer.getInput());
 
-      this.mangroveA.getFormantOutput().connect(this.mangroveAGain);
-      this.jfOsc.getMixOutput().connect(this.jfOscGain);
-      this.mangroveAGain.connect(this.threeSisters.getAudioInput());
-      this.jfOscGain.connect(this.threeSisters.getAudioInput());
+this.quantizer.getOutput().connect(this.mangroveA.getPitchCVInput());
+this.quantizer.getOutput().connect(this.jfOsc.getTimeCVInput());
 
-      this.mangroveC.getFormantOutput().connect(this.threeSisters.getFMInput());
+this.mangroveB.getFormantOutput().connect(this.fmGainB);
+this.fmGainB.connect(this.fmExpGain);
+this.fmExpGain.connect(this.mangroveA.getPitchCVInput());
+this.fmExpGain.connect(this.jfOsc.getTimeCVInput());
+this.fmGainB.connect(this.fmLinGain);
+this.fmLinGain.connect(this.mangroveA.getFMInput());
+this.fmLinGain.connect(this.jfOsc.getFMInput());
 
-      this.threeSisters.getAllOutput().connect(this.scope2Analyser);
-      this.scope2Analyser.connect(this.masterGain);
-      this.masterGain.connect(this.audioContext.destination);
-      
-      this.jfMerger = this.audioContext.createChannelMerger(5);
-      this.jf1.get2NOutput().connect(this.jfMerger, 0, 0);
-      this.jf1.get3NOutput().connect(this.jfMerger, 0, 1);
-      this.jf1.get4NOutput().connect(this.jfMerger, 0, 2);
-      this.jf1.get5NOutput().connect(this.jfMerger, 0, 3);
-      this.jf1.get6NOutput().connect(this.jfMerger, 0, 4);
-      this.jfMerger.connect(this.modMatrix.getInput());
-      
-      // Setup drum routing
-      this.setupDrumRouting();
-      
-      console.log('=== Phase 5 + LFOs + Drums ===');
-      console.log('Signal routing complete');
+this.mangroveA.getFormantOutput().connect(this.mangroveAGain);
+this.jfOsc.getMixOutput().connect(this.jfOscGain);
+this.mangroveAGain.connect(this.threeSisters.getAudioInput());
+this.jfOscGain.connect(this.threeSisters.getAudioInput());
+
+this.mangroveC.getFormantOutput().connect(this.threeSisters.getFMInput());
+
+// Three Sisters → Scope2 (to visualize pre-effects)
+this.threeSisters.getAllOutput().connect(this.scope2Analyser);
+
+// Scope2 → Effects Chain → Master → Destination
+this.scope2Analyser.connect(this.effectsInput);
+
+// Effects chain: EQ → Saturation → Mimeophon → Greyhole → Zita
+this.effectsInput.connect(this.djEQ.input);
+this.djEQ.output.connect(this.saturation.input);
+this.saturation.output.connect(this.mimeophon.inputGain);
+this.mimeophon.outputGain.connect(this.greyhole.input);
+this.greyhole.connect(this.zitaReverb.node);
+this.zitaReverb.node.connect(this.effectsOutput);
+
+// Effects output → Master gain → Destination
+this.effectsOutput.connect(this.masterGain);
+this.masterGain.connect(this.audioContext.destination);
+
+console.log('✓ Effects chain routed (synth through effects)');
+
+// Modulation matrix
+this.jfMerger = this.audioContext.createChannelMerger(5);
+this.jf1.get2NOutput().connect(this.jfMerger, 0, 0);
+this.jf1.get3NOutput().connect(this.jfMerger, 0, 1);
+this.jf1.get4NOutput().connect(this.jfMerger, 0, 2);
+this.jf1.get5NOutput().connect(this.jfMerger, 0, 3);
+this.jf1.get6NOutput().connect(this.jfMerger, 0, 4);
+this.jfMerger.connect(this.modMatrix.getInput());
+
+// Setup drum routing (drums bypass effects, go direct to master)
+this.setupDrumRouting();
+
+console.log('=== Phase 5 + LFOs + Drums + Effects ===');
+console.log('Signal routing complete');
       
       // Build comprehensive destination map
       this.buildDestinationMap();
@@ -237,7 +313,7 @@ class Phase5App {
       
       this.syncUIWithParameters();
       
-      console.log('%c✓ Phase 5 + LFOs + Drums initialized!', 'color: green; font-weight: bold');
+      console.log('%c✓ Phase 5 + LFOs + Drums + Effects initialized!', 'color: green; font-weight: bold');
       
     } catch (error) {
       console.error('Failed to initialize:', error);
@@ -287,9 +363,9 @@ class Phase5App {
     this.drumSequencer.getSnareTriggerOutput().connect(this.drumSynth.getSnareTriggerInput());
     this.drumSequencer.getHatTriggerOutput().connect(this.drumSynth.getHatTriggerInput());
     
-    // Connect synth output to master
+    // Connect synth output to master - DRUMS BYPASS EFFECTS
     this.drumSynth.getOutput().connect(this.drumMasterGain);
-    this.drumMasterGain.connect(this.masterGain);
+    this.drumMasterGain.connect(this.audioContext.destination); // Drums bypass effects
     
     // Source 1: JF (always running - best default)
     this.jf1.get4NOutput().connect(this.jfDrumClockGain);
@@ -853,6 +929,481 @@ class Phase5App {
       this.start();
     }
   }
+
+  // ========== EFFECTS UI ==========
+  
+  initEffectsUI() {
+    const container = document.getElementById('effectsContainer');
+    if (!container) {
+      console.warn('Effects container not found');
+      return;
+    }
+    
+    // Add all effects UIs
+    container.appendChild(this.createDJEQUI());
+    container.appendChild(this.createSaturationUI());
+    container.appendChild(this.mimeophon.createUI());
+    container.appendChild(this.createGreyholeUI());
+    container.appendChild(this.createZitaUI());
+    
+    console.log('✓ Effects UI initialized');
+  }
+  
+  createGreyholeUI() {
+    const container = document.createElement('div');
+    container.className = 'effect-module greyhole';
+    
+    const bypassed = false; // Default not bypassed
+    container.classList.toggle('bypassed', bypassed);
+    
+    container.innerHTML = `
+      <div class="effect-header">
+        <h3 class="effect-title">Greyhole Reverb</h3>
+        <label class="effect-bypass">
+          <input type="checkbox" class="bypass-toggle">
+          <span>Bypass</span>
+        </label>
+      </div>
+      
+      <div class="effect-controls">
+        <div class="param-control">
+          <label>Delay Time</label>
+          <input type="range" min="0" max="10" step="0.1" value="2" data-param="delayTime">
+          <span class="param-value">2.0 s</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Size</label>
+          <input type="range" min="0.5" max="5" step="0.1" value="3" data-param="size">
+          <span class="param-value">3.0</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Damping</label>
+          <input type="range" min="0" max="1" step="0.01" value="0.1" data-param="damping">
+          <span class="param-value">10%</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Diffusion</label>
+          <input type="range" min="0" max="1" step="0.01" value="0.707" data-param="diffusion">
+          <span class="param-value">71%</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Feedback</label>
+          <input type="range" min="0" max="1" step="0.01" value="0.7" data-param="feedback">
+          <span class="param-value">70%</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Mod Depth</label>
+          <input type="range" min="0" max="1" step="0.01" value="0" data-param="modDepth">
+          <span class="param-value">0%</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Mod Freq</label>
+          <input type="range" min="0" max="10" step="0.1" value="0.1" data-param="modFreq">
+          <span class="param-value">0.1 Hz</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Mix</label>
+          <input type="range" min="0" max="1" step="0.01" value="0.3" data-param="mix">
+          <span class="param-value">30%</span>
+        </div>
+      </div>
+    `;
+    
+    // Attach listeners
+    let dryGain, wetGain;
+    const createBypassRouting = () => {
+      if (!dryGain) {
+        dryGain = this.audioContext.createGain();
+        wetGain = this.audioContext.createGain();
+        
+        // Disconnect greyhole from direct routing
+        this.greyhole.dispose();
+        
+        // Create new routing through bypass
+        this.saturation.output.disconnect();
+        this.saturation.output.connect(dryGain);
+        this.saturation.output.connect(this.greyhole.input);
+        
+        dryGain.connect(this.mimeophon.inputGain);
+        this.greyhole.connect(wetGain);
+        wetGain.connect(this.mimeophon.inputGain);
+        
+        dryGain.gain.value = 0;
+        wetGain.gain.value = 1;
+      }
+    };
+    
+    container.querySelector('.bypass-toggle').addEventListener('change', (e) => {
+      createBypassRouting();
+      const bypassed = e.target.checked;
+      container.classList.toggle('bypassed', bypassed);
+      
+      const now = this.audioContext.currentTime;
+      if (bypassed) {
+        dryGain.gain.linearRampToValueAtTime(1, now + 0.02);
+        wetGain.gain.linearRampToValueAtTime(0, now + 0.02);
+      } else {
+        dryGain.gain.linearRampToValueAtTime(0, now + 0.02);
+        wetGain.gain.linearRampToValueAtTime(1, now + 0.02);
+      }
+    });
+    
+    container.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const param = e.target.dataset.param;
+        const value = parseFloat(e.target.value);
+        
+        if (param === 'delayTime') {
+          this.greyhole.delayTime = value;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
+        } else if (param === 'size') {
+          this.greyhole.size = value;
+          e.target.nextElementSibling.textContent = value.toFixed(1);
+        } else if (param === 'damping') {
+          this.greyhole.damping = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'diffusion') {
+          this.greyhole.diffusion = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'feedback') {
+          this.greyhole.feedback = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'modDepth') {
+          this.greyhole.modDepth = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'modFreq') {
+          this.greyhole.modFreq = value;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} Hz`;
+        } else if (param === 'mix') {
+          this.greyhole.mix = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        }
+      });
+    });
+    
+    return container;
+  }
+  
+  createZitaUI() {
+    const container = document.createElement('div');
+    container.className = 'effect-module zita';
+    
+    const bypassed = false;
+    container.classList.toggle('bypassed', bypassed);
+    
+    container.innerHTML = `
+      <div class="effect-header">
+        <h3 class="effect-title">Zita Reverb</h3>
+        <label class="effect-bypass">
+          <input type="checkbox" class="bypass-toggle">
+          <span>Bypass</span>
+        </label>
+      </div>
+      
+      <div class="effect-controls">
+        <div class="param-control">
+          <label>Pre-Delay</label>
+          <input type="range" min="0" max="200" step="1" value="20" data-param="preDel">
+          <span class="param-value">20 ms</span>
+        </div>
+        
+        <div class="param-control">
+          <label>LF Crossover</label>
+          <input type="range" min="30" max="1200" step="10" value="200" data-param="lfFc">
+          <span class="param-value">200 Hz</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Low RT60</label>
+          <input type="range" min="0.1" max="3" step="0.1" value="1" data-param="lowRt60">
+          <span class="param-value">1.0 s</span>
+        </div>
+        
+        <div class="param-control">
+          <label>Mid RT60</label>
+          <input type="range" min="0.1" max="3" step="0.1" value="1" data-param="midRt60">
+          <span class="param-value">1.0 s</span>
+        </div>
+        
+        <div class="param-control">
+          <label>HF Damping</label>
+          <input type="range" min="1200" max="23520" step="100" value="6000" data-param="hfDamp">
+          <span class="param-value">6000 Hz</span>
+        </div>
+        
+        <div class="preset-selector">
+          <label>Preset:</label>
+          <select class="preset-select">
+            <option value="">-- select --</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+            <option value="hall">Hall</option>
+            <option value="bright">Bright</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+      </div>
+    `;
+    
+    // Bypass routing
+    let dryGain, wetGain;
+    const createBypassRouting = () => {
+      if (!dryGain) {
+        dryGain = this.audioContext.createGain();
+        wetGain = this.audioContext.createGain();
+        
+        this.zitaReverb.disconnect();
+        
+        this.greyhole.disconnect();
+        this.greyhole.connect(dryGain);
+        this.greyhole.connect(this.zitaReverb.node);
+        
+        dryGain.connect(this.effectsOutput);
+        this.zitaReverb.node.connect(wetGain);
+        wetGain.connect(this.effectsOutput);
+        
+        dryGain.gain.value = 0;
+        wetGain.gain.value = 1;
+      }
+    };
+    
+    container.querySelector('.bypass-toggle').addEventListener('change', (e) => {
+      createBypassRouting();
+      const bypassed = e.target.checked;
+      container.classList.toggle('bypassed', bypassed);
+      
+      const now = this.audioContext.currentTime;
+      if (bypassed) {
+        dryGain.gain.linearRampToValueAtTime(1, now + 0.02);
+        wetGain.gain.linearRampToValueAtTime(0, now + 0.02);
+      } else {
+        dryGain.gain.linearRampToValueAtTime(0, now + 0.02);
+        wetGain.gain.linearRampToValueAtTime(1, now + 0.02);
+      }
+    });
+    
+    container.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const param = e.target.dataset.param;
+        const value = parseFloat(e.target.value);
+        
+        if (param === 'preDel') {
+          this.zitaReverb.setPreDelay(value);
+          e.target.nextElementSibling.textContent = `${Math.round(value)} ms`;
+        } else if (param === 'lfFc') {
+          this.zitaReverb.setLowFreqCrossover(value);
+          e.target.nextElementSibling.textContent = `${Math.round(value)} Hz`;
+        } else if (param === 'lowRt60') {
+          this.zitaReverb.setLowRT60(value);
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
+        } else if (param === 'midRt60') {
+          this.zitaReverb.setMidRT60(value);
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
+        } else if (param === 'hfDamp') {
+          this.zitaReverb.setHighFreqDamping(value);
+          e.target.nextElementSibling.textContent = `${Math.round(value)} Hz`;
+        }
+      });
+    });
+    
+    container.querySelector('.preset-select').addEventListener('change', (e) => {
+      const preset = e.target.value;
+      if (preset) {
+        this.zitaReverb.loadPreset(preset);
+        // Update UI to reflect preset values
+        // (You could add code here to sync sliders with preset values)
+        setTimeout(() => e.target.value = '', 100);
+      }
+    });
+    
+    return container;
+  }
+
+  createDJEQUI() {
+  const container = document.createElement('div');
+  container.className = 'effect-module djeq';
+  
+  container.innerHTML = `
+    <div class="effect-header">
+      <h3 class="effect-title">DJ Equalizer</h3>
+      <label class="effect-bypass">
+        <input type="checkbox" class="bypass-toggle">
+        <span>Bypass</span>
+      </label>
+    </div>
+    
+    <div class="effect-controls">
+      <div class="param-control">
+        <label>Low Gain (-24 to +12 dB)</label>
+        <input type="range" min="-24" max="12" step="0.5" value="0" data-param="lowGain">
+        <span class="param-value">0.0 dB</span>
+      </div>
+      
+      <div class="param-control">
+        <label>Low Kill</label>
+        <label class="toggle-switch">
+          <input type="checkbox" data-param="lowKill">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div class="param-control">
+        <label>Mid Gain (-24 to +12 dB)</label>
+        <input type="range" min="-24" max="12" step="0.5" value="0" data-param="midGain">
+        <span class="param-value">0.0 dB</span>
+      </div>
+      
+      <div class="param-control">
+        <label>Mid Kill</label>
+        <label class="toggle-switch">
+          <input type="checkbox" data-param="midKill">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div class="param-control">
+        <label>High Gain (-24 to +12 dB)</label>
+        <input type="range" min="-24" max="12" step="0.5" value="0" data-param="highGain">
+        <span class="param-value">0.0 dB</span>
+      </div>
+      
+      <div class="param-control">
+        <label>High Kill</label>
+        <label class="toggle-switch">
+          <input type="checkbox" data-param="highKill">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  `;
+  
+  // Bind controls
+  container.querySelectorAll('input[type="range"]').forEach(slider => {
+    slider.addEventListener('input', (e) => {
+      const param = e.target.dataset.param;
+      const value = parseFloat(e.target.value);
+      
+      if (param === 'lowGain') {
+        this.djEQ.setLowGain(value);
+        e.target.nextElementSibling.textContent = `${value.toFixed(1)} dB`;
+      } else if (param === 'midGain') {
+        this.djEQ.setMidGain(value);
+        e.target.nextElementSibling.textContent = `${value.toFixed(1)} dB`;
+      } else if (param === 'highGain') {
+        this.djEQ.setHighGain(value);
+        e.target.nextElementSibling.textContent = `${value.toFixed(1)} dB`;
+      }
+    });
+  });
+  
+  container.querySelectorAll('input[type="checkbox"][data-param]').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const param = e.target.dataset.param;
+      const value = e.target.checked;
+      
+      if (param === 'lowKill') {
+        this.djEQ.setLowKill(value);
+      } else if (param === 'midKill') {
+        this.djEQ.setMidKill(value);
+      } else if (param === 'highKill') {
+        this.djEQ.setHighKill(value);
+      }
+    });
+  });
+  
+  return container;
+}
+
+createSaturationUI() {
+  const container = document.createElement('div');
+  container.className = 'effect-module saturation';
+  
+  container.innerHTML = `
+    <div class="effect-header">
+      <h3 class="effect-title">Saturation</h3>
+      <label class="effect-bypass">
+        <input type="checkbox" class="bypass-toggle">
+        <span>Bypass</span>
+      </label>
+    </div>
+    
+    <div class="effect-controls">
+      <div class="param-control">
+        <label>Mode</label>
+        <select data-param="mode">
+          <option value="tape" selected>Tape</option>
+          <option value="triode">Triode</option>
+          <option value="pentode">Pentode</option>
+          <option value="transformer">Transformer</option>
+        </select>
+      </div>
+      
+      <div class="param-control">
+        <label>Drive</label>
+        <input type="range" min="0" max="1" step="0.01" value="0" data-param="drive">
+        <span class="param-value">0%</span>
+      </div>
+      
+      <div class="param-control">
+        <label>Bias</label>
+        <input type="range" min="-1" max="1" step="0.01" value="0" data-param="bias">
+        <span class="param-value">0</span>
+      </div>
+      
+      <div class="param-control">
+        <label>Mix</label>
+        <input type="range" min="0" max="1" step="0.01" value="1" data-param="mix">
+        <span class="param-value">100%</span>
+      </div>
+      
+      <div class="param-control">
+        <label>Harmonics</label>
+        <select data-param="harmonics">
+          <option value="even" selected>Even</option>
+          <option value="odd">Odd</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+    </div>
+  `;
+  
+  // Bind controls
+  container.querySelector('select[data-param="mode"]').addEventListener('change', (e) => {
+    this.saturation.setMode(e.target.value);
+  });
+  
+  container.querySelector('select[data-param="harmonics"]').addEventListener('change', (e) => {
+    this.saturation.setHarmonics(e.target.value);
+  });
+  
+  container.querySelectorAll('input[type="range"]').forEach(slider => {
+    slider.addEventListener('input', (e) => {
+      const param = e.target.dataset.param;
+      const value = parseFloat(e.target.value);
+      
+      if (param === 'drive') {
+        this.saturation.setDrive(value);
+        e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+      } else if (param === 'bias') {
+        this.saturation.setBias(value);
+        e.target.nextElementSibling.textContent = value.toFixed(2);
+      } else if (param === 'mix') {
+        this.saturation.setMix(value);
+        e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+      }
+    });
+  });
+  
+  return container;
+}
 
   // ========== LFO UI GENERATION ==========
 
@@ -1687,13 +2238,15 @@ class Phase5App {
         this.createSequencerUI();
         this.initLFOUI();
         this.initDrumStepSequencerUI();
+
       });
     } else {
       this.bindControls();
       this.initModMatrixUI();
       this.createSequencerUI();
       this.initLFOUI();
-      this.initDrumStepSequencerUI(); 
+      this.initDrumStepSequencerUI();
+
     }
   }
 
