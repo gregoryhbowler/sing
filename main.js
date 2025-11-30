@@ -676,7 +676,6 @@ console.log('Signal routing complete');
     this.drumMasterGain.gain.value = 0.70;
     
     console.log('✓ Drum defaults set');
-  }
 
     // Effects defaults - all mixes at 0
     this.djEQ.setLowGain(0);
