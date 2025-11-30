@@ -678,6 +678,22 @@ console.log('Signal routing complete');
     console.log('✓ Drum defaults set');
   }
 
+    // Effects defaults - all mixes at 0
+    this.djEQ.setLowGain(0);
+    this.djEQ.setMidGain(0);
+    this.djEQ.setHighGain(0);
+    
+    this.saturation.setMix(0);
+    
+    this.mimeophon.setMix(0);
+    
+    this.greyhole.mix = 0;
+    
+    this.zitaReverb._setParam('mix', 0);
+    
+    console.log('✓ Effects defaults set (all mixes at 0)');
+  }
+
   setActiveOscillator(osc) {
     if (osc === this.activeOscillator) return;
     
@@ -973,7 +989,7 @@ console.log('Signal routing complete');
         <div class="param-control">
           <label>Mix (Dry/Wet)</label>
           <input type="range" min="0" max="1" step="0.01" value="0.3" data-param="mix">
-          <span class="param-value">30%</span>
+          <span class="param-value">0%</span>
         </div>
         
         <div class="param-control">
@@ -1102,7 +1118,7 @@ console.log('Signal routing complete');
       <div class="effect-controls">
         <div class="param-control">
           <label>Mix (Dry/Wet)</label>
-          <input type="range" min="0" max="1" step="0.01" value="0.5" data-param="mix">
+          <input type="range" min="0" max="1" step="0.01" value="0.0" data-param="mix">
           <span class="param-value">50%</span>
         </div>
         
@@ -1348,7 +1364,7 @@ createSaturationUI() {
       
       <div class="param-control">
         <label>Mix</label>
-        <input type="range" min="0" max="1" step="0.01" value="1" data-param="mix">
+        <input type="range" min="0" max="1" step="0.01" value="0" data-param="mix">
         <span class="param-value">100%</span>
       </div>
       
