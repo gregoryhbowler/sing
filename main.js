@@ -1,4 +1,4 @@
-// main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine + Effects Chain + WAV Recorder
+// main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine + Effects Chain + WAV Recorder + Patch Save/Load
 // FIXED: Drums now audible with default pattern, proper clock source, and better UI initialization
 
 import { JustFriendsNode } from './JustFriendsNode.js';
@@ -28,6 +28,9 @@ import { SaturationEffect } from './SaturationEffect.js';
 
 // WAV Recorder
 import { WavRecorder } from './WavRecorder.js';
+
+// Patch Manager for save/load functionality
+import { PatchManager } from './PatchManager.js';
 
 class Phase5App {
   constructor() {
@@ -79,6 +82,9 @@ class Phase5App {
     // WAV Recorder
     this.wavRecorder = null;
     this.lastRecordingBlob = null;
+    
+    // Patch Manager
+    this.patchManager = null;
     
     // Oscillator selection state
     this.activeOscillator = 'mangrove';
@@ -313,6 +319,10 @@ console.log('Signal routing complete');
       // Build comprehensive destination map
       this.buildDestinationMap();
       
+      // Initialize patch manager for save/load functionality
+      this.patchManager = new PatchManager(this);
+      console.log('✓ Patch Manager initialized');
+      
       this.configureDefaults();
 
       // Initialize effects UI
@@ -333,7 +343,10 @@ console.log('Signal routing complete');
       // Initialize recorder UI
       this.initRecorderUI();
       
-      console.log('%c✓ Phase 5 + LFOs + Drums + Effects + WAV Recorder initialized!', 'color: green; font-weight: bold');
+      console.log('%c✓ Phase 5 + LFOs + Drums + Effects + WAV Recorder + Patch Save/Load initialized!', 'color: green; font-weight: bold');
+      
+      // Expose app globally for transport save/load access
+      window.phase5App = this;
       
     } catch (error) {
       console.error('Failed to initialize:', error);
