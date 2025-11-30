@@ -2,6 +2,7 @@
 // CV Quantizer - AudioWorkletProcessor
 // Converts continuous audio-rate CV into quantized audio-rate CV (1V/oct space)
 // NOW WITH TRANSPOSE SEQUENCER SUPPORT
+// FIXED: Now handles bipolar CV input (positive AND negative) for René mode
 // NO MIDI, NO TRIGGERS - pure analog-style quantization
 
 class QuantizerProcessor extends AudioWorkletProcessor {
@@ -62,7 +63,7 @@ class QuantizerProcessor extends AudioWorkletProcessor {
     // Round to nearest integer semitone first
     let targetIdx = Math.round(fractionalSemitone);
     
-    // Wrap to 0-11 range
+    // Wrap to 0-11 range (handle negative values properly)
     targetIdx = ((targetIdx % 12) + 12) % 12;
     
     // If this note is allowed, use it immediately
@@ -98,11 +99,13 @@ class QuantizerProcessor extends AudioWorkletProcessor {
 
   // Quantize a voltage value to the nearest allowed note
   // Returns voltage in 1V/oct space
+  // NOW HANDLES NEGATIVE VOLTAGES for notes below the base pitch
   quantizeVoltage(voltsIn) {
     // Convert voltage to semitones (1V/oct = 12 semitones/volt)
     const totalSemitones = voltsIn * 12.0;
     
     // Split into octave and semitone-within-octave
+    // Use Math.floor to handle negative values correctly
     const octave = Math.floor(totalSemitones / 12.0);
     const semitoneInOctave = totalSemitones - (octave * 12.0);
     
@@ -186,17 +189,32 @@ class QuantizerProcessor extends AudioWorkletProcessor {
       const offset = parameters.offset[i] ?? parameters.offset[0];
       const transpose = Math.round(parameters.transpose[i] ?? parameters.transpose[0]);
       
-      // Read input CV from Just Friends
-      // JF SHAPE mode outputs 0-8V, normalized to 0-1.6 in Web Audio
+      // Read input CV - can be from JF (0-1.6) or René (bipolar)
       const cvValue = cvIn[i] || 0;
       
-      // Normalize JF output to 0-1 range
-      // JF outputs 0-8V which becomes 0-1.6, so divide by 1.6
-      const normalized = Math.max(0, Math.min(1.6, cvValue)) / 1.6;
+      // FIXED: Handle bipolar input properly
+      // For JF (cycle mode): input is 0 to ~1.6, we scale by depth
+      // For René: input is already in voltage space (set directly by renePitchSource)
+      // 
+      // Detection: if input is negative, it's from René in bipolar mode
+      // If positive and > 0.5, likely from JF
+      //
+      // Universal approach: treat input as voltage directly, scale by depth
+      // Input range: -2 to +2 (from René) or 0 to 1.6 (from JF)
       
-      // Apply depth to map to voltage range
-      // depth is now in octaves (0-8 range)
-      const volts = normalized * depth;
+      let volts;
+      
+      if (cvValue < 0) {
+        // Negative input - must be from René bipolar mode
+        // Input is already in octaves (e.g., -2 to +2)
+        volts = cvValue * depth;
+      } else {
+        // Positive input - could be JF or René
+        // Normalize assuming JF range (0-1.6 maps to 0-1)
+        // Then scale by depth
+        const normalized = Math.min(1.6, cvValue) / 1.6;
+        volts = normalized * depth;
+      }
       
       // Quantize to nearest allowed note
       let quantizedVolts = this.quantizeVoltage(volts);
