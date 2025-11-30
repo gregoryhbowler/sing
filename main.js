@@ -15,11 +15,16 @@ import { DrumSynthNode } from './DrumSynthNode.js';
 import { DrumSequencerNode } from './DrumSequencerNode.js';
 
 // ADD EFFECTS IMPORTS
+
 import { DJEqualizerUI } from './DJEqualizerUI.js';
 import { SaturationEffectUI } from './SaturationEffectUI.js';
 import { StandaloneMimeophon } from './mimeophon-standalone.js';
 import GreyholeNode from './GreyholeNode.js';
 import { ZitaReverb } from './ZitaReverb.js';
+
+// Core audio classes (needed for direct instantiation)
+import { DJEqualizer } from './DJEqualizer.js';
+import { SaturationEffect } from './SaturationEffect.js';
 
 class Phase5App {
   constructor() {
