@@ -220,7 +220,10 @@ class GreyholeNode extends AudioWorkletNode {
   }
 }
 
-// Export for module systems
+// Export for ES6 modules
+export default GreyholeNode;
+
+// Export for CommonJS (if needed)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = GreyholeNode;
 }
