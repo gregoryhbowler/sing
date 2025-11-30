@@ -1,4 +1,4 @@
-// main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine + Effects Chain
+// main.js - Phase 5 + René Mode Integration + 7 LFOs + Drum Machine + Effects Chain + WAV Recorder
 // FIXED: Drums now audible with default pattern, proper clock source, and better UI initialization
 
 import { JustFriendsNode } from './JustFriendsNode.js';
@@ -25,6 +25,9 @@ import { ZitaReverb } from './ZitaReverb.js';
 // Core audio classes (needed for direct instantiation)
 import { DJEqualizer } from './DJEqualizer.js';
 import { SaturationEffect } from './SaturationEffect.js';
+
+// WAV Recorder
+import { WavRecorder } from './WavRecorder.js';
 
 class Phase5App {
   constructor() {
@@ -72,6 +75,10 @@ class Phase5App {
     // Effects routing
     this.effectsInput = null;
     this.effectsOutput = null;
+    
+    // WAV Recorder
+    this.wavRecorder = null;
+    this.lastRecordingBlob = null;
     
     // Oscillator selection state
     this.activeOscillator = 'mangrove';
@@ -198,6 +205,10 @@ class Phase5App {
   this.effectsInput = this.audioContext.createGain();
   this.effectsOutput = this.audioContext.createGain();
   
+  // Create WAV Recorder
+  this.wavRecorder = new WavRecorder(this.audioContext);
+  console.log('✓ WAV Recorder created');
+  
   // DJ Equalizer (3-band with kill switches)
   this.djEQ = new DJEqualizer(this.audioContext, {
     lowFreq: 100,
@@ -276,10 +287,12 @@ this.mimeophon.outputGain.connect(this.greyhole.input);
 this.greyhole.connect(this.zitaReverb.node);
 this.zitaReverb.node.connect(this.effectsOutput);
 
-// Effects output → Master gain → Destination
-this.effectsOutput.connect(this.masterGain);
+// Effects output → Recorder → Master gain → Destination
+this.effectsOutput.connect(this.wavRecorder.getInput());
+this.wavRecorder.getOutput().connect(this.masterGain);
 this.masterGain.connect(this.audioContext.destination);
 
+console.log('✓ WAV Recorder connected to signal chain');
 console.log('✓ Effects chain routed (synth through effects)');
 
 // Modulation matrix
@@ -317,12 +330,127 @@ console.log('Signal routing complete');
       
       this.syncUIWithParameters();
       
-      console.log('%c✓ Phase 5 + LFOs + Drums + Effects initialized!', 'color: green; font-weight: bold');
+      // Initialize recorder UI
+      this.initRecorderUI();
+      
+      console.log('%c✓ Phase 5 + LFOs + Drums + Effects + WAV Recorder initialized!', 'color: green; font-weight: bold');
       
     } catch (error) {
       console.error('Failed to initialize:', error);
       document.getElementById('status').textContent = 'Error: ' + error.message;
     }
+  }
+
+  initRecorderUI() {
+    const sidebar = document.getElementById('wavRecorderSidebar');
+    const recordBtn = document.getElementById('recorderRecordBtn');
+    const pauseBtn = document.getElementById('recorderPauseBtn');
+    const stopBtn = document.getElementById('recorderStopBtn');
+    const downloadBtn = document.getElementById('recorderDownloadBtn');
+    const cancelBtn = document.getElementById('recorderCancelBtn');
+    const timeDisplay = document.getElementById('recorderTime');
+    const statusDisplay = document.getElementById('recorderStatus');
+    
+    if (!sidebar || !this.wavRecorder) {
+      console.warn('Recorder UI elements not found');
+      return;
+    }
+    
+    // Update UI based on recorder state
+    const updateUI = (state) => {
+      sidebar.className = 'wav-recorder-sidebar';
+      
+      switch (state) {
+        case 'recording':
+          sidebar.classList.add('recording');
+          statusDisplay.textContent = 'Recording';
+          pauseBtn.querySelector('.btn-icon').textContent = '⏸';
+          pauseBtn.classList.remove('active');
+          break;
+          
+        case 'paused':
+          sidebar.classList.add('paused');
+          statusDisplay.textContent = 'Paused';
+          pauseBtn.querySelector('.btn-icon').textContent = '▶';
+          pauseBtn.classList.add('active');
+          break;
+          
+        case 'stopped':
+          sidebar.classList.add('idle');
+          if (this.lastRecordingBlob) {
+            sidebar.classList.add('has-recording');
+            statusDisplay.textContent = 'Saved!';
+          } else {
+            statusDisplay.textContent = 'Ready';
+          }
+          break;
+          
+        default:
+          sidebar.classList.add('idle');
+          statusDisplay.textContent = 'Ready';
+      }
+    };
+    
+    // Time update callback
+    this.wavRecorder.onTimeUpdate = (duration) => {
+      timeDisplay.textContent = this.wavRecorder.formatDuration(duration);
+    };
+    
+    // State change callback
+    this.wavRecorder.onStateChange = updateUI;
+    
+    // Record button
+    recordBtn?.addEventListener('click', () => {
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+      
+      this.lastRecordingBlob = null;
+      sidebar.classList.remove('has-recording');
+      this.wavRecorder.start();
+    });
+    
+    // Pause/Resume button
+    pauseBtn?.addEventListener('click', () => {
+      if (this.wavRecorder.isPaused) {
+        this.wavRecorder.resume();
+      } else {
+        this.wavRecorder.pause();
+      }
+    });
+    
+    // Stop button
+    stopBtn?.addEventListener('click', () => {
+      this.lastRecordingBlob = this.wavRecorder.stop();
+      
+      if (this.lastRecordingBlob) {
+        sidebar.classList.add('has-recording');
+        
+        // Auto-download option (uncomment if desired)
+        // this.wavRecorder.downloadRecording(this.lastRecordingBlob);
+      }
+    });
+    
+    // Download button
+    downloadBtn?.addEventListener('click', () => {
+      if (this.lastRecordingBlob) {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        this.wavRecorder.downloadRecording(
+          this.lastRecordingBlob, 
+          `phase5-recording-${timestamp}.wav`
+        );
+      }
+    });
+    
+    // Cancel button
+    cancelBtn?.addEventListener('click', () => {
+      this.wavRecorder.cancel();
+      this.lastRecordingBlob = null;
+      sidebar.classList.remove('has-recording');
+      timeDisplay.textContent = '00:00.00';
+    });
+    
+    console.log('✓ Recorder UI initialized');
   }
 
   createDrumClockSources() {
