@@ -13,8 +13,55 @@
   <link rel="stylesheet" href="drum-machine-styles.css">
   <link rel="stylesheet" href="effects-styles.css">
   <link rel="stylesheet" href="wav-recorder-styles.css">
+  <link rel="stylesheet" href="transport-styles.css">
 </head>
 <body>
+
+  <!-- Floating Transport Sidebar - Always visible on the left side -->
+  <div class="transport-sidebar stopped" id="transportSidebar">
+    
+    <!-- Title -->
+    <div class="transport-title">TRANSPORT</div>
+    
+    <!-- Status Indicator Light -->
+    <div class="transport-indicator" id="transportIndicator"></div>
+    
+    <!-- Status Text -->
+    <div class="transport-status" id="transportStatus">Stopped</div>
+    
+    <!-- Control Buttons -->
+    <div class="transport-buttons">
+      
+      <!-- Play Button -->
+      <button class="transport-btn play" id="transportPlayBtn" title="Start Audio" disabled>
+        <span class="btn-icon">▶</span>
+        <span class="transport-tooltip">Start</span>
+      </button>
+      
+      <!-- Stop Button -->
+      <button class="transport-btn stop" id="transportStopBtn" title="Stop Audio" style="display: none;">
+        <span class="btn-icon">⏹</span>
+        <span class="transport-tooltip">Stop</span>
+      </button>
+      
+    </div>
+    
+    <!-- Volume Control -->
+    <div class="transport-volume">
+      <span class="transport-volume-label">Vol</span>
+      <div class="transport-volume-slider-container">
+        <input type="range" 
+               class="transport-volume-slider-horizontal" 
+               id="transportVolume"
+               min="0" 
+               max="1" 
+               step="0.01" 
+               value="0.3">
+      </div>
+      <span class="transport-volume-value" id="transportVolumeValue">0.30</span>
+    </div>
+    
+  </div>
 
   <!-- WAV Recorder Sidebar - Always visible on the right side -->
 <div class="wav-recorder-sidebar idle" id="wavRecorderSidebar">
@@ -1194,6 +1241,13 @@
       </div>
     </div>
 
+    <!-- SCOPE 2 - MOVED HERE (after Three Sisters, before modulation matrix) -->
+    <div class="panel-section scope-panel">
+      <h2 class="section-title">scope 2 (three sisters output)</h2>
+      <canvas id="scope2" width="800" height="200"></canvas>
+      <p class="scope-info">Final audio output</p>
+    </div>
+
     <!-- MODULATION MATRIX PANEL -->
     <div class="panel-section mod-matrix-panel">
       <h2 class="section-title">modulation matrix (jf #1 slopes)</h2>
@@ -1239,13 +1293,6 @@
 <!-- IMPORTANT: In the main.js import, replace the import line with: -->
 <!-- <script type="module" src="./main-with-lfos.js"></script> -->
 
-    <!-- SCOPE 2 -->
-    <div class="panel-section scope-panel">
-      <h2 class="section-title">scope 2 (three sisters output)</h2>
-      <canvas id="scope2" width="800" height="200"></canvas>
-      <p class="scope-info">Final audio output</p>
-    </div>
-
     <!-- MASTER CONTROLS -->
     <div class="panel-section">
       <h2 class="section-title">master</h2>
@@ -1269,5 +1316,6 @@
   </div>
 
   <script type="module" src="./main.js"></script>
+  <script src="./transport-init.js"></script>
 </body>
 </html>
