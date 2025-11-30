@@ -92,7 +92,7 @@ class MimeophonProcessor extends AudioWorkletProcessor {
             { name: 'repeats', defaultValue: 0.3, minValue: 0, maxValue: 1.2 },
             { name: 'color', defaultValue: 0.5, minValue: 0, maxValue: 1 },
             { name: 'halo', defaultValue: 0, minValue: 0, maxValue: 1 },
-            { name: 'mix', defaultValue: 0.5, minValue: 0, maxValue: 1 },
+            { name: 'mix', defaultValue: 0.0, minValue: 0, maxValue: 1 },
             { name: 'hold', defaultValue: 0, minValue: 0, maxValue: 1 },
             { name: 'flip', defaultValue: 0, minValue: 0, maxValue: 1 },
             { name: 'pingPong', defaultValue: 0, minValue: 0, maxValue: 1 },
@@ -974,7 +974,7 @@ registerProcessor('mimeophon-processor', MimeophonProcessor);
                             <span class="mimeophon-param-label">mix</span>
                             <span class="mimeophon-param-value" id="mimeophon-mix">50%</span>
                         </div>
-                        <input type="range" id="mimeophon-mix-slider" min="0" max="1" step="0.01" value="0.5">
+                        <input type="range" id="mimeophon-mix-slider" min="0" max="1" step="0.01" value="0.0">
                     </div>
                     <div class="mimeophon-toggles">
                         <button class="mimeophon-toggle-btn" id="mimeophon-pingpong">ping-pong</button>
