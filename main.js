@@ -971,7 +971,7 @@ console.log('Signal routing complete');
     // Track bypass state internally
     let isBypassed = false;
     
-    container.innerHTML = \`
+    container.innerHTML = `
       <div class="effect-header">
         <h3 class="effect-title">Greyhole Reverb</h3>
         <label class="effect-bypass">
@@ -1029,7 +1029,7 @@ console.log('Signal routing complete');
           <span class="param-value">0.1 Hz</span>
         </div>
       </div>
-    \`;
+    `;
     
     // Store the original mix value for bypass
     let savedMix = 0.3;
@@ -1053,7 +1053,7 @@ console.log('Signal routing complete');
         // Restore saved mix
         this.greyhole.mix = savedMix;
         mixSlider.value = savedMix;
-        mixDisplay.textContent = \`\${Math.round(savedMix * 100)}%\`;
+        mixDisplay.textContent = `${Math.round(savedMix * 100)}%`;
         mixSlider.disabled = false;
       }
     });
@@ -1066,28 +1066,28 @@ console.log('Signal routing complete');
         if (param === 'mix') {
           this.greyhole.mix = value;
           savedMix = value; // Update saved value when user changes it
-          e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
         } else if (param === 'delayTime') {
           this.greyhole.delayTime = value;
-          e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} s\`;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
         } else if (param === 'size') {
           this.greyhole.size = value;
           e.target.nextElementSibling.textContent = value.toFixed(1);
         } else if (param === 'damping') {
           this.greyhole.damping = value;
-          e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
         } else if (param === 'diffusion') {
           this.greyhole.diffusion = value;
-          e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
         } else if (param === 'feedback') {
           this.greyhole.feedback = value;
-          e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
         } else if (param === 'modDepth') {
           this.greyhole.modDepth = value;
-          e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
         } else if (param === 'modFreq') {
           this.greyhole.modFreq = value;
-          e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} Hz\`;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} Hz`;
         }
       });
     });
@@ -1101,7 +1101,7 @@ console.log('Signal routing complete');
     
     let isBypassed = false;
     
-    container.innerHTML = \`
+    container.innerHTML = `
       <div class="effect-header">
         <h3 class="effect-title">Zita Reverb</h3>
         <label class="effect-bypass">
@@ -1160,7 +1160,7 @@ console.log('Signal routing complete');
           </select>
         </div>
       </div>
-    \`;
+    `;
     
     // Store the original mix value for bypass
     let savedMix = 0.5;
@@ -1182,7 +1182,7 @@ console.log('Signal routing complete');
       } else {
         this.zitaReverb._setParam('mix', savedMix);
         mixSlider.value = savedMix;
-        mixDisplay.textContent = \`\${Math.round(savedMix * 100)}%\`;
+        mixDisplay.textContent = `${Math.round(savedMix * 100)}%`;
         mixSlider.disabled = false;
       }
     });
@@ -1195,22 +1195,22 @@ console.log('Signal routing complete');
         if (param === 'mix') {
           this.zitaReverb._setParam('mix', value);
           savedMix = value;
-          e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
         } else if (param === 'preDel') {
           this.zitaReverb.setPreDelay(value);
-          e.target.nextElementSibling.textContent = \`\${Math.round(value)} ms\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value)} ms`;
         } else if (param === 'lfFc') {
           this.zitaReverb.setLowFreqCrossover(value);
-          e.target.nextElementSibling.textContent = \`\${Math.round(value)} Hz\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value)} Hz`;
         } else if (param === 'lowRt60') {
           this.zitaReverb.setLowRT60(value);
-          e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} s\`;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
         } else if (param === 'midRt60') {
           this.zitaReverb.setMidRT60(value);
-          e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} s\`;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
         } else if (param === 'hfDamp') {
           this.zitaReverb.setHighFreqDamping(value);
-          e.target.nextElementSibling.textContent = \`\${Math.round(value)} Hz\`;
+          e.target.nextElementSibling.textContent = `${Math.round(value)} Hz`;
         }
       });
     });
@@ -1230,7 +1230,7 @@ console.log('Signal routing complete');
   const container = document.createElement('div');
   container.className = 'effect-module djeq';
   
-  container.innerHTML = \`
+  container.innerHTML = `
     <div class="effect-header">
       <h3 class="effect-title">DJ Equalizer</h3>
       <label class="effect-bypass">
@@ -1282,7 +1282,7 @@ console.log('Signal routing complete');
         </label>
       </div>
     </div>
-  \`;
+  `;
   
   // Bind controls
   container.querySelectorAll('input[type="range"]').forEach(slider => {
@@ -1292,13 +1292,13 @@ console.log('Signal routing complete');
       
       if (param === 'lowGain') {
         this.djEQ.setLowGain(value);
-        e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} dB\`;
+        e.target.nextElementSibling.textContent = `${value.toFixed(1)} dB`;
       } else if (param === 'midGain') {
         this.djEQ.setMidGain(value);
-        e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} dB\`;
+        e.target.nextElementSibling.textContent = `${value.toFixed(1)} dB`;
       } else if (param === 'highGain') {
         this.djEQ.setHighGain(value);
-        e.target.nextElementSibling.textContent = \`\${value.toFixed(1)} dB\`;
+        e.target.nextElementSibling.textContent = `${value.toFixed(1)} dB`;
       }
     });
   });
@@ -1325,7 +1325,7 @@ createSaturationUI() {
   const container = document.createElement('div');
   container.className = 'effect-module saturation';
   
-  container.innerHTML = \`
+  container.innerHTML = `
     <div class="effect-header">
       <h3 class="effect-title">Saturation</h3>
       <label class="effect-bypass">
@@ -1372,7 +1372,7 @@ createSaturationUI() {
         </select>
       </div>
     </div>
-  \`;
+  `;
   
   // Bind controls
   container.querySelector('select[data-param="mode"]').addEventListener('change', (e) => {
@@ -1390,13 +1390,13 @@ createSaturationUI() {
       
       if (param === 'drive') {
         this.saturation.setDrive(value);
-        e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+        e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
       } else if (param === 'bias') {
         this.saturation.setBias(value);
         e.target.nextElementSibling.textContent = value.toFixed(2);
       } else if (param === 'mix') {
         this.saturation.setMix(value);
-        e.target.nextElementSibling.textContent = \`\${Math.round(value * 100)}%\`;
+        e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
       }
     });
   });
