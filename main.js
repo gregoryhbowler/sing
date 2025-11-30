@@ -957,8 +957,8 @@ console.log('Signal routing complete');
     const container = document.createElement('div');
     container.className = 'effect-module greyhole';
     
-    const bypassed = false; // Default not bypassed
-    container.classList.toggle('bypassed', bypassed);
+    // Track bypass state internally
+    let isBypassed = false;
     
     container.innerHTML = `
       <div class="effect-header">
@@ -970,6 +970,12 @@ console.log('Signal routing complete');
       </div>
       
       <div class="effect-controls">
+        <div class="param-control">
+          <label>Mix (Dry/Wet)</label>
+          <input type="range" min="0" max="1" step="0.01" value="0.3" data-param="mix">
+          <span class="param-value">30%</span>
+        </div>
+        
         <div class="param-control">
           <label>Delay Time</label>
           <input type="range" min="0" max="10" step="0.1" value="2" data-param="delayTime">
@@ -1011,14 +1017,72 @@ console.log('Signal routing complete');
           <input type="range" min="0" max="10" step="0.1" value="0.1" data-param="modFreq">
           <span class="param-value">0.1 Hz</span>
         </div>
-        
-        <div class="param-control">
-          <label>Mix</label>
-          <input type="range" min="0" max="1" step="0.01" value="0.3" data-param="mix">
-          <span class="param-value">30%</span>
-        </div>
       </div>
     `;
+    
+    // Store the original mix value for bypass
+    let savedMix = 0.3;
+    
+    // Bypass works by setting mix to 0 (fully dry)
+    container.querySelector('.bypass-toggle').addEventListener('change', (e) => {
+      isBypassed = e.target.checked;
+      container.classList.toggle('bypassed', isBypassed);
+      
+      const mixSlider = container.querySelector('input[data-param="mix"]');
+      const mixDisplay = mixSlider.nextElementSibling;
+      
+      if (isBypassed) {
+        // Save current mix and set to 0 (dry)
+        savedMix = parseFloat(mixSlider.value);
+        this.greyhole.mix = 0;
+        mixSlider.value = 0;
+        mixDisplay.textContent = '0% (bypassed)';
+        mixSlider.disabled = true;
+      } else {
+        // Restore saved mix
+        this.greyhole.mix = savedMix;
+        mixSlider.value = savedMix;
+        mixDisplay.textContent = `${Math.round(savedMix * 100)}%`;
+        mixSlider.disabled = false;
+      }
+    });
+    
+    container.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const param = e.target.dataset.param;
+        const value = parseFloat(e.target.value);
+        
+        if (param === 'mix') {
+          this.greyhole.mix = value;
+          savedMix = value; // Update saved value when user changes it
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'delayTime') {
+          this.greyhole.delayTime = value;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} s`;
+        } else if (param === 'size') {
+          this.greyhole.size = value;
+          e.target.nextElementSibling.textContent = value.toFixed(1);
+        } else if (param === 'damping') {
+          this.greyhole.damping = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'diffusion') {
+          this.greyhole.diffusion = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'feedback') {
+          this.greyhole.feedback = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'modDepth') {
+          this.greyhole.modDepth = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'modFreq') {
+          this.greyhole.modFreq = value;
+          e.target.nextElementSibling.textContent = `${value.toFixed(1)} Hz`;
+        }
+      });
+    });
+    
+    return container;
+  }
     
     // Attach listeners
     let dryGain, wetGain;
@@ -1099,8 +1163,7 @@ console.log('Signal routing complete');
     const container = document.createElement('div');
     container.className = 'effect-module zita';
     
-    const bypassed = false;
-    container.classList.toggle('bypassed', bypassed);
+    let isBypassed = false;
     
     container.innerHTML = `
       <div class="effect-header">
@@ -1112,6 +1175,12 @@ console.log('Signal routing complete');
       </div>
       
       <div class="effect-controls">
+        <div class="param-control">
+          <label>Mix (Dry/Wet)</label>
+          <input type="range" min="0" max="1" step="0.01" value="0.5" data-param="mix">
+          <span class="param-value">50%</span>
+        </div>
+        
         <div class="param-control">
           <label>Pre-Delay</label>
           <input type="range" min="0" max="200" step="1" value="20" data-param="preDel">
@@ -1157,40 +1226,28 @@ console.log('Signal routing complete');
       </div>
     `;
     
-    // Bypass routing
-    let dryGain, wetGain;
-    const createBypassRouting = () => {
-      if (!dryGain) {
-        dryGain = this.audioContext.createGain();
-        wetGain = this.audioContext.createGain();
-        
-        this.zitaReverb.disconnect();
-        
-        this.greyhole.disconnect();
-        this.greyhole.connect(dryGain);
-        this.greyhole.connect(this.zitaReverb.node);
-        
-        dryGain.connect(this.effectsOutput);
-        this.zitaReverb.node.connect(wetGain);
-        wetGain.connect(this.effectsOutput);
-        
-        dryGain.gain.value = 0;
-        wetGain.gain.value = 1;
-      }
-    };
+    // Store the original mix value for bypass
+    let savedMix = 0.5;
     
+    // Bypass by setting mix to 0
     container.querySelector('.bypass-toggle').addEventListener('change', (e) => {
-      createBypassRouting();
-      const bypassed = e.target.checked;
-      container.classList.toggle('bypassed', bypassed);
+      isBypassed = e.target.checked;
+      container.classList.toggle('bypassed', isBypassed);
       
-      const now = this.audioContext.currentTime;
-      if (bypassed) {
-        dryGain.gain.linearRampToValueAtTime(1, now + 0.02);
-        wetGain.gain.linearRampToValueAtTime(0, now + 0.02);
+      const mixSlider = container.querySelector('input[data-param="mix"]');
+      const mixDisplay = mixSlider.nextElementSibling;
+      
+      if (isBypassed) {
+        savedMix = parseFloat(mixSlider.value);
+        this.zitaReverb._setParam('mix', 0);
+        mixSlider.value = 0;
+        mixDisplay.textContent = '0% (bypassed)';
+        mixSlider.disabled = true;
       } else {
-        dryGain.gain.linearRampToValueAtTime(0, now + 0.02);
-        wetGain.gain.linearRampToValueAtTime(1, now + 0.02);
+        this.zitaReverb._setParam('mix', savedMix);
+        mixSlider.value = savedMix;
+        mixDisplay.textContent = `${Math.round(savedMix * 100)}%`;
+        mixSlider.disabled = false;
       }
     });
     
@@ -1199,7 +1256,11 @@ console.log('Signal routing complete');
         const param = e.target.dataset.param;
         const value = parseFloat(e.target.value);
         
-        if (param === 'preDel') {
+        if (param === 'mix') {
+          this.zitaReverb._setParam('mix', value);
+          savedMix = value;
+          e.target.nextElementSibling.textContent = `${Math.round(value * 100)}%`;
+        } else if (param === 'preDel') {
           this.zitaReverb.setPreDelay(value);
           e.target.nextElementSibling.textContent = `${Math.round(value)} ms`;
         } else if (param === 'lfFc') {
@@ -1222,8 +1283,6 @@ console.log('Signal routing complete');
       const preset = e.target.value;
       if (preset) {
         this.zitaReverb.loadPreset(preset);
-        // Update UI to reflect preset values
-        // (You could add code here to sync sliders with preset values)
         setTimeout(() => e.target.value = '', 100);
       }
     });
