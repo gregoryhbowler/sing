@@ -2,6 +2,7 @@
 // UPGRADED Integration for René with 4 mod lanes, pattern system, Pattern/Edit modes, and drum machine clock
 // FIXED: Note range now ±2 octaves centered at 12 o'clock
 // UPGRADED: Mod lanes now have access to ALL destinations (same as LFOs)
+// UPDATED: Exposes components on window object for PatchManager save/load
 
 import { ReneSequencer } from './ReneSequencer.js';
 import { RenePatternSystem } from './RenePatternSystem.js';
@@ -123,6 +124,11 @@ export async function initReneMode(app) {
     }
   });
   
+  // IMPORTANT: Expose components on window for PatchManager access
+  window.reneSequencer = reneSequencer;
+  window.renePatternSystem = renePatternSystem;
+  window.reneEnvelopeVCA = envelopeVCA;
+  
   // Initialize enhanced UI
   initializeEnhancedReneUI(reneSequencer);
   
@@ -135,6 +141,7 @@ export async function initReneMode(app) {
   console.log('✓ UPGRADED René mode initialized with drum machine clock');
   console.log('✓ Note range: ±2 octaves (knob center = no transpose)');
   console.log('✓ Mod lanes now have full destination access (same as LFOs)');
+  console.log('✓ Components exposed on window for patch save/load');
 }
 
 /**
