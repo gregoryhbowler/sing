@@ -1,4 +1,4 @@
-// ZitaReverb AudioWorklet Processor
+// ZitaReverb AudioWorklet Processor - UPDATED with Mix, Size, and Decay
 // Translated from Faust-generated C++ code
 
 class ZitaReverbProcessor extends AudioWorkletProcessor {
@@ -13,8 +13,15 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
       lfFc: 200.0,       // Hz
       lowRt60: 1.0,      // seconds
       midRt60: 1.0,      // seconds
-      hfDamp: 6000.0     // Hz
+      hfDamp: 6000.0,    // Hz
+      mix: 0.5,          // wet/dry mix (0 = dry, 1 = wet)
+      size: 1.0,         // size multiplier (0.5 - 2.0)
+      decay: 1.0         // decay multiplier (0.1 - 3.0)
     };
+    
+    // Dry signal buffer for mix
+    this.dryL = new Float32Array(128);
+    this.dryR = new Float32Array(128);
     
     // Initialize constants
     this.initConstants();
@@ -128,6 +135,10 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
   updateCoefficients() {
     const params = this.params;
     
+    // Apply size and decay multipliers to RT60 values
+    const effectiveLowRt60 = params.lowRt60 * params.size * params.decay;
+    const effectiveMidRt60 = params.midRt60 * params.size * params.decay;
+    
     // High-frequency damping coefficients
     const fSlow0 = Math.cos(this.fConst1 * params.hfDamp);
     
@@ -137,8 +148,8 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
     for (let i = 0; i < 8; i++) {
       const decayConst = this.decayConsts[i].main;
       
-      // Mid RT60 coefficients
-      const fSlow2 = Math.exp(decayConst / params.midRt60);
+      // Mid RT60 coefficients (with decay multiplier)
+      const fSlow2 = Math.exp(decayConst / effectiveMidRt60);
       const fSlow3 = this.power2(fSlow2);
       const fSlow4 = 1.0 - (fSlow0 * fSlow3);
       const fSlow5 = 1.0 - fSlow3;
@@ -148,8 +159,8 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
       const fSlow8 = fSlow6 - fSlow7;
       const fSlow9 = fSlow2 * (fSlow7 + (1.0 - fSlow6));
       
-      // Low RT60 coefficients
-      const fSlow11 = (Math.exp(decayConst / params.lowRt60) / fSlow2) - 1.0;
+      // Low RT60 coefficients (with decay multiplier)
+      const fSlow11 = (Math.exp(decayConst / effectiveLowRt60) / fSlow2) - 1.0;
       
       this.coeffs.push({
         b0: fSlow8,
@@ -166,9 +177,10 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
       feedback: (1.0 - fSlow12) / fSlow13
     };
     
-    // Pre-delay in samples
+    // Pre-delay in samples (affected by size)
+    const effectivePreDel = params.preDel * params.size;
     this.preDelaySamples = Math.min(8192, Math.max(0, 
-      Math.floor(this.fConst7 * params.preDel)));
+      Math.floor(this.fConst7 * effectivePreDel)));
   }
   
   process(inputs, outputs, parameters) {
@@ -187,6 +199,12 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
     const inputR = input.length > 1 ? input[1] : input[0];
     const outputL = output[0];
     const outputR = output.length > 1 ? output[1] : output[0];
+    
+    // Store dry signal for mixing
+    for (let i = 0; i < blockSize; i++) {
+      this.dryL[i] = inputL[i];
+      this.dryR[i] = inputR[i];
+    }
     
     for (let i = 0; i < blockSize; i++) {
       const idx = this.IOTA & 16383;
@@ -464,9 +482,14 @@ class ZitaReverbProcessor extends AudioWorkletProcessor {
                     (combOuts[1] + (this.filterStates[1].combOut[1] + 
                     (combOuts[3] + (this.filterStates[3].combOut[1] + fTemp18))));
       
-      // Output stereo signal
-      outputL[i] = 0.37 * (fRec1 + fRec2);
-      outputR[i] = 0.37 * (fRec1 - fRec2);
+      // Calculate wet stereo signal
+      const wetL = 0.37 * (fRec1 + fRec2);
+      const wetR = 0.37 * (fRec1 - fRec2);
+      
+      // Mix dry and wet based on mix parameter
+      const mix = this.params.mix;
+      outputL[i] = this.dryL[i] * (1 - mix) + wetL * mix;
+      outputR[i] = this.dryR[i] * (1 - mix) + wetR * mix;
       
       // Update filter states
       for (let j = 0; j < 8; j++) {
