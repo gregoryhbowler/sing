@@ -61,6 +61,23 @@
       <span class="transport-volume-value" id="transportVolumeValue">0.30</span>
     </div>
     
+    <!-- Patch Save/Load -->
+    <div class="transport-patch-controls">
+      <span class="transport-patch-label">Patch</span>
+      
+      <button class="transport-btn patch-save" id="transportSaveBtn" title="Save Patch">
+        <span class="btn-icon">💾</span>
+        <span class="transport-tooltip">Save</span>
+      </button>
+      
+      <button class="transport-btn patch-load" id="transportLoadBtn" title="Load Patch">
+        <span class="btn-icon">📂</span>
+        <span class="transport-tooltip">Load</span>
+      </button>
+      
+      <input type="file" id="patchFileInput" accept=".json,.phase5" style="display: none;">
+    </div>
+    
   </div>
 
   <!-- WAV Recorder Sidebar - Always visible on the right side -->
