@@ -1,259 +1,201 @@
-/* transpose-sequencer-styles.css */
+/* transpose-sequencer-styles.css - Dream Aesthetic */
 
 .transpose-sequencer-panel {
   grid-column: 1 / -1;
-  background: linear-gradient(135deg, 
-    rgba(232, 213, 232, 0.6) 0%, 
-    rgba(212, 228, 247, 0.6) 100%);
-}
-
-.sequencer-controls {
-  display: flex;
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
-  padding-bottom: var(--space-md);
-  border-bottom: 1px solid var(--border-light);
-  flex-wrap: wrap;
-}
-
-.sequencer-control-group {
-  flex: 1;
-  min-width: 200px;
-}
-
-.sequencer-control-group label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: var(--space-sm);
-  text-transform: lowercase;
-}
-
-.sequencer-control-group select {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--bg-panel);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
+  border-radius: var(--radius-lg);
 }
 
-.sequencer-control-group select:hover {
-  border-color: var(--border-medium);
+.sequencer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-light);
 }
 
-.playback-mode-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-sm);
+.playback-controls {
+  display: flex;
+  gap: 6px;
 }
 
 .playback-mode-btn {
-  padding: var(--space-sm);
-  background: rgba(255, 255, 255, 0.6);
-  border: 2px solid var(--border-light);
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-  text-align: center;
+  transition: all 0.15s ease;
 }
 
 .playback-mode-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-tertiary);
   border-color: var(--border-medium);
 }
 
 .playback-mode-btn.active {
-  background: var(--text-primary);
+  background: var(--accent-blue);
   color: white;
-  border-color: var(--text-primary);
-}
-
-.sequencer-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: var(--space-sm);
+  border-color: var(--accent-blue);
 }
 
 .clock-source-section {
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
-  border: 1px solid var(--border-light);
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.clock-source-section .control-group-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
 }
 
 .clock-source-control {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 10px;
 }
 
 .clock-select {
   width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(255, 255, 255, 0.8);
+  padding: 8px 12px;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .clock-select:hover {
   border-color: var(--border-medium);
-  background: white;
-}
-
-.clock-select:focus {
-  outline: none;
-  border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px rgba(42, 42, 42, 0.1);
 }
 
 .clock-indicator {
-  padding: var(--space-sm) var(--space-md);
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
-  font-size: 0.7rem;
+  font-size: 10px;
   font-weight: 600;
   text-align: center;
-  letter-spacing: 0.05em;
-  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .clock-indicator.jf {
-  background: linear-gradient(135deg, #c49ac4, #7eb5d6);
-  color: white;
-  box-shadow: 0 2px 8px rgba(126, 181, 214, 0.3);
+  background: var(--accent-blue-light);
+  color: var(--accent-blue-dark);
 }
 
 .clock-indicator.rene {
-  background: linear-gradient(135deg, #8dc49a, #7eb5d6);
-  color: white;
-  box-shadow: 0 2px 8px rgba(141, 196, 154, 0.3);
+  background: rgba(141, 196, 154, 0.2);
+  color: #5a9a6a;
 }
 
 .clock-description {
-  font-size: 0.65rem;
+  font-size: 10px;
   line-height: 1.5;
-  color: var(--text-secondary);
-  margin: 0;
-  padding: var(--space-sm);
-  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
+  padding: 10px;
+  background: var(--bg-tertiary);
   border-radius: var(--radius-sm);
 }
 
 .clock-description strong {
-  color: var(--text-primary);
-  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+#sequencerGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  padding: 16px;
 }
 
 .seq-cell {
-  background: rgba(255, 255, 255, 0.4);
-  border: 2px solid var(--border-light);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: var(--space-sm);
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-  transition: all 0.2s ease;
-  position: relative;
+  gap: 6px;
+  transition: all 0.15s ease;
+  min-height: 120px;
 }
 
 .seq-cell:hover {
-  background: rgba(255, 255, 255, 0.6);
   border-color: var(--border-medium);
+  box-shadow: var(--shadow-subtle);
 }
 
 .seq-cell.active {
-  background: rgba(200, 220, 255, 0.7);
-  border-color: #7eb5d6;
-  box-shadow: 0 0 0 2px rgba(126, 181, 214, 0.3);
+  border-color: var(--accent-blue);
+  background: rgba(122, 155, 184, 0.05);
 }
 
 .seq-cell.current {
-  background: linear-gradient(135deg, #c49ac4, #7eb5d6);
-  border-color: #6b5b95;
-  box-shadow: 0 0 16px rgba(107, 91, 149, 0.5);
-  animation: pulse-seq 1s ease-in-out infinite;
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
 }
 
-@keyframes pulse-seq {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.seq-cell.current .seq-cell-number,
-.seq-cell.current .transpose-display,
-.seq-cell.current .repeats-display {
-  color: white;
-  font-weight: 700;
+.seq-cell.current * {
+  color: white !important;
 }
 
 .seq-cell-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-xs);
 }
 
 .seq-cell-number {
-  font-size: 0.65rem;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--text-dim);
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
 }
 
 .seq-cell-toggle {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #7eb5d6;
+  accent-color: var(--accent-blue);
 }
 
-.transpose-control {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.transpose-label {
-  font-size: 0.6rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.transpose-display {
-  font-size: 0.9rem;
+.transpose-value {
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
   text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  padding: 8px 0;
 }
 
-.transpose-display.positive {
-  color: #4a90a4;
+.transpose-value.positive {
+  color: var(--accent-blue-dark);
 }
 
-.transpose-display.negative {
-  color: #c49ac4;
+.transpose-value.negative {
+  color: #a47ea4;
 }
 
 .transpose-slider {
   width: 100%;
+  height: 4px;
   -webkit-appearance: none;
   appearance: none;
-  height: 3px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--border-light);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -262,172 +204,69 @@
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: var(--text-primary);
+  background: var(--accent-blue);
   border-radius: 50%;
   cursor: pointer;
-}
-
-.transpose-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: var(--text-primary);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.repeats-control {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
-  padding-top: var(--space-xs);
-  border-top: 1px solid var(--border-light);
-}
-
-.repeats-label {
-  font-size: 0.6rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .repeats-input {
-  flex: 1;
   width: 100%;
-  padding: 2px 4px;
-  background: rgba(255, 255, 255, 0.8);
+  padding: 6px 8px;
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
-  border-radius: 4px;
-  font-size: 0.7rem;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
   text-align: center;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  margin-top: auto;
 }
 
 .repeats-input:focus {
   outline: none;
-  border-color: var(--text-primary);
-}
-
-.repeats-display {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
+  border-color: var(--accent-blue);
 }
 
 .sequencer-actions {
-  display: flex;
-  gap: var(--space-sm);
-  margin-top: var(--space-md);
-  padding-top: var(--space-md);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px;
   border-top: 1px solid var(--border-light);
 }
 
 .seq-action-btn {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(255, 255, 255, 0.6);
+  padding: 10px 16px;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.7rem;
-  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .seq-action-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: var(--border-medium);
-  transform: translateY(-1px);
-}
-
-.seq-action-btn:active {
-  transform: translateY(0);
-}
-
-/* Scale selector enhancements */
-.scale-selector-extended {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
-}
-
-.root-note-selector {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.root-note-selector label {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.root-note-selector select {
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.scale-presets-extended {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--space-sm);
-  margin-top: var(--space-md);
-}
-
-.scale-preset-btn {
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.7rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-}
-
-.scale-preset-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-tertiary);
   border-color: var(--border-medium);
 }
 
-.scale-preset-btn.active {
-  background: var(--text-primary);
-  color: white;
-  border-color: var(--text-primary);
+@media (max-width: 1200px) {
+  #sequencerGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  .sequencer-grid {
-    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-  }
-  
-  .sequencer-controls {
-    flex-direction: column;
-  }
-  
-  .playback-mode-buttons {
+  #sequencerGrid {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .scale-presets-extended {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  .sequencer-actions {
+    grid-template-columns: 1fr;
   }
 }
