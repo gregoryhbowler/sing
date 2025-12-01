@@ -1,0 +1,293 @@
+/* slider-fix.css - Comprehensive slider track visibility fix */
+
+/* 
+ * This file ensures all range inputs have visible tracks.
+ * The issue: -webkit-appearance: none removes default styling including the track.
+ * Solution: Explicitly style the track for all browsers.
+ */
+
+/* Base slider styles - applies to ALL range inputs */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+  margin: 0;
+}
+
+/* WebKit Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+/* WebKit Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary, #2a2a2a);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -5px; /* Center thumb on track */
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Firefox Track */
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+/* Firefox Thumb */
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary, #2a2a2a);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Focus states */
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(126, 181, 214, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(126, 181, 214, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== Specific panel slider overrides ========== */
+
+/* Param row sliders (most common) */
+.param-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+}
+
+.param-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.param-row input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Effect module sliders */
+.param-control input[type="range"],
+.effect-controls input[type="range"] {
+  flex: 1;
+  height: 4px;
+}
+
+.param-control input[type="range"]::-webkit-slider-runnable-track,
+.effect-controls input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.param-control input[type="range"]::-moz-range-track,
+.effect-controls input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Control slider (René panel) */
+.control-slider {
+  width: 100%;
+  height: 4px;
+}
+
+.control-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.control-slider::-moz-range-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* René knob input */
+.rene-knob-input {
+  width: 100%;
+  height: 6px;
+}
+
+.rene-knob-input::-webkit-slider-runnable-track {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.rene-knob-input::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+}
+
+.rene-knob-input::-moz-range-track {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.rene-knob-input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+}
+
+/* Transpose slider */
+.transpose-slider {
+  width: 100%;
+  height: 4px;
+}
+
+.transpose-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.transpose-slider::-moz-range-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Drum machine sliders */
+.drum-param-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+}
+
+.drum-param-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.drum-param-row input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* LFO control sliders */
+.lfo-control-row input[type="range"] {
+  flex: 1;
+  height: 3px;
+}
+
+.lfo-control-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.lfo-control-row input[type="range"]::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  background: #5b9570;
+  margin-top: -5.5px;
+}
+
+.lfo-control-row input[type="range"]::-moz-range-track {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.lfo-control-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #5b9570;
+}
+
+/* Mod matrix sliders */
+.mod-control-row input[type="range"] {
+  flex: 1;
+  height: 3px;
+}
+
+.mod-control-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.mod-control-row input[type="range"]::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  background: #6b5b95;
+  margin-top: -5.5px;
+}
+
+.mod-control-row input[type="range"]::-moz-range-track {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.mod-control-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #6b5b95;
+}
+
+/* EQ band sliders in effects */
+.eq-band input[type="range"] {
+  width: 100%;
+  height: 4px;
+}
+
+.eq-band input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.eq-band input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Transport volume slider (rotated) */
+.transport-volume-slider-horizontal {
+  width: 60px;
+  height: 4px;
+}
+
+.transport-volume-slider-horizontal::-webkit-slider-runnable-track {
+  width: 60px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
+
+.transport-volume-slider-horizontal::-moz-range-track {
+  width: 60px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
