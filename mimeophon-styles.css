@@ -1,0 +1,321 @@
+/* mimeophon-styles.css - Mimeophon delay styled to match Phase 5 aesthetic */
+
+/* Mimeophon Container - matches effect-module style */
+.mimeophon-module {
+  background: linear-gradient(135deg, 
+    rgba(200, 210, 240, 0.7) 0%, 
+    rgba(220, 200, 230, 0.7) 100%);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.mimeophon-module:hover {
+  background: linear-gradient(135deg, 
+    rgba(210, 220, 250, 0.8) 0%, 
+    rgba(230, 210, 240, 0.8) 100%);
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-lifted);
+}
+
+/* Header */
+.mimeophon-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.mimeophon-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+/* Preset Selector */
+.mimeophon-preset-select {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mimeophon-preset-select:hover {
+  border-color: var(--border-medium);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.mimeophon-preset-select:focus {
+  outline: none;
+  border-color: #7eb5d6;
+  box-shadow: 0 0 0 2px rgba(126, 181, 214, 0.2);
+}
+
+/* Main Layout - 3 columns like other effects */
+.mimeophon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* Section containers */
+.mimeophon-section {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.mimeophon-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Zone Selector Buttons */
+.mimeophon-zone-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: var(--space-md);
+}
+
+.mimeophon-zone-btn {
+  padding: var(--space-sm) 2px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.mimeophon-zone-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.mimeophon-zone-btn.active {
+  background: linear-gradient(135deg, #7eb5d6, #8dc49a);
+  border-color: #7eb5d6;
+  color: white;
+  box-shadow: 0 2px 8px rgba(126, 181, 214, 0.35);
+}
+
+.mimeophon-zone-btn .zone-letter {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.mimeophon-zone-btn .zone-range {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Parameter Controls */
+.mimeophon-param {
+  margin-bottom: var(--space-sm);
+}
+
+.mimeophon-param:last-child {
+  margin-bottom: 0;
+}
+
+.mimeophon-param-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.mimeophon-param-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+
+.mimeophon-param-value {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sliders */
+.mimeophon-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+}
+
+.mimeophon-slider::-webkit-slider-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.mimeophon-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.mimeophon-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.mimeophon-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.mimeophon-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Toggle Buttons */
+.mimeophon-toggles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: var(--space-sm);
+}
+
+.mimeophon-toggle-btn {
+  padding: var(--space-sm);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mimeophon-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--border-medium);
+}
+
+.mimeophon-toggle-btn.active {
+  background: linear-gradient(135deg, #8dc49a, #7eb5d6);
+  border-color: #8dc49a;
+  color: white;
+  box-shadow: 0 2px 8px rgba(141, 196, 154, 0.35);
+}
+
+/* Tips Box */
+.mimeophon-tips {
+  margin-top: var(--space-md);
+  padding: var(--space-sm);
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-sm);
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  border-left: 3px solid rgba(126, 181, 214, 0.5);
+}
+
+.mimeophon-tips strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* I/O Controls */
+.mimeophon-io-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.mimeophon-io-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mimeophon-io-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mimeophon-io-value {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .mimeophon-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mimeophon-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .mimeophon-zone-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
