@@ -1,122 +1,87 @@
-/* transport-styles.css - Floating transport control sidebar with patch save/load */
+/* transport-styles.css - Dream Aesthetic */
 
-/* Transport Sidebar Container - mirrors recorder on the left */
 .transport-sidebar {
   position: fixed;
   left: 20px;
   top: 50%;
   transform: translateY(-50%);
-  width: 80px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  width: 72px;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-light);
-  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  padding: 16px 12px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-md);
-  transition: all 0.3s ease;
+  gap: 14px;
+  transition: all 0.2s ease;
 }
 
 .transport-sidebar:hover {
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
 }
 
-/* Running state */
 .transport-sidebar.running {
-  background: linear-gradient(135deg, 
-    rgba(240, 255, 240, 0.98) 0%, 
-    rgba(255, 255, 255, 0.98) 100%);
-  border-color: rgba(90, 196, 90, 0.3);
+  border-color: rgba(74, 222, 128, 0.3);
 }
 
-/* Stopped state */
-.transport-sidebar.stopped {
-  background: rgba(255, 255, 255, 0.95);
-}
-
-/* Title */
 .transport-title {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--text-muted);
   text-align: center;
-  white-space: nowrap;
 }
 
-/* Status Indicator */
 .transport-indicator {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--text-dim);
-  transition: all 0.3s ease;
+  background: var(--border-medium);
+  transition: all 0.2s ease;
 }
 
 .transport-sidebar.running .transport-indicator {
-  background: #5ac45a;
-  box-shadow: 0 0 12px rgba(90, 196, 90, 0.6);
-  animation: pulse-transport 2s ease-in-out infinite;
+  background: #4ade80;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
 }
 
-.transport-sidebar.stopped .transport-indicator {
-  background: #999;
-  box-shadow: none;
-}
-
-@keyframes pulse-transport {
-  0%, 100% { 
-    box-shadow: 0 0 12px rgba(90, 196, 90, 0.6);
-  }
-  50% { 
-    box-shadow: 0 0 20px rgba(90, 196, 90, 0.8);
-  }
-}
-
-/* Status Text */
 .transport-status {
-  font-size: 0.55rem;
+  font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--text-muted);
   text-align: center;
-  padding: var(--space-xs) 0;
 }
 
 .transport-sidebar.running .transport-status {
-  color: #4a9a4a;
+  color: #22c55e;
 }
 
-/* Button Container */
 .transport-buttons {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 8px;
   width: 100%;
 }
 
-/* Transport Buttons */
 .transport-btn {
   width: 100%;
-  height: 44px;
+  height: 40px;
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  font-family: inherit;
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   position: relative;
-  overflow: hidden;
 }
 
 .transport-btn:disabled {
@@ -128,88 +93,66 @@
   transform: scale(1.05);
 }
 
-.transport-btn:not(:disabled):active {
-  transform: scale(0.98);
-}
-
-/* Play Button */
 .transport-btn.play {
-  background: linear-gradient(135deg, #6bcf6b, #5ac45a);
+  background: var(--accent-blue);
   color: white;
-  box-shadow: 0 4px 12px rgba(90, 196, 90, 0.4);
+  box-shadow: 0 4px 10px rgba(122, 155, 184, 0.3);
 }
 
 .transport-btn.play:not(:disabled):hover {
-  background: linear-gradient(135deg, #5ac45a, #4ab34a);
-  box-shadow: 0 6px 16px rgba(90, 196, 90, 0.5);
+  background: var(--accent-blue-dark);
 }
 
-/* Stop Button */
 .transport-btn.stop {
-  background: linear-gradient(135deg, #666, #555);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
 }
 
 .transport-btn.stop:not(:disabled):hover {
-  background: linear-gradient(135deg, #555, #444);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  background: var(--border-light);
 }
 
-/* Volume Control */
 .transport-volume {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
-  padding-top: var(--space-sm);
+  gap: 6px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
 }
 
 .transport-volume-label {
-  font-size: 0.5rem;
+  font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .transport-volume-value {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
-  min-width: 36px;
-  text-align: center;
+  font-family: var(--font-mono);
 }
 
-/* Vertical slider for volume */
-.transport-volume-slider {
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  width: 20px;
-  height: 80px;
-  background: transparent;
-  cursor: pointer;
-}
-
-/* For browsers that don't support vertical appearance */
 .transport-volume-slider-container {
   width: 100%;
-  height: 60px;
+  height: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Horizontal slider fallback with rotation */
 .transport-volume-slider-horizontal {
-  width: 60px;
+  width: 50px;
   height: 4px;
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--border-light);
   border-radius: 2px;
   cursor: pointer;
   transform: rotate(-90deg);
@@ -217,101 +160,78 @@
 
 .transport-volume-slider-horizontal::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.transport-volume-slider-horizontal::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.transport-volume-slider-horizontal::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  background: var(--text-primary);
-  border: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-blue);
   border-radius: 50%;
   cursor: pointer;
 }
-
-/* ========== PATCH SAVE/LOAD SECTION ========== */
 
 .transport-patch-controls {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-sm);
-  padding-top: var(--space-sm);
+  gap: 8px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
 }
 
 .transport-patch-label {
-  font-size: 0.5rem;
+  font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
-/* Patch Save Button */
 .transport-btn.patch-save {
-  background: linear-gradient(135deg, #7eb5d6, #5a9fc4);
-  color: white;
-  box-shadow: 0 4px 12px rgba(126, 181, 214, 0.4);
-  height: 40px;
-  font-size: 1rem;
+  background: var(--accent-blue-light);
+  color: var(--accent-blue-dark);
+  height: 36px;
+  font-size: 14px;
 }
 
 .transport-btn.patch-save:hover {
-  background: linear-gradient(135deg, #5a9fc4, #4a8fb4);
-  box-shadow: 0 6px 16px rgba(126, 181, 214, 0.5);
+  background: var(--accent-blue);
+  color: white;
 }
 
-/* Patch Load Button */
 .transport-btn.patch-load {
-  background: linear-gradient(135deg, #c49ac4, #a47ea4);
-  color: white;
-  box-shadow: 0 4px 12px rgba(196, 154, 196, 0.4);
-  height: 40px;
-  font-size: 1rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  height: 36px;
+  font-size: 14px;
 }
 
 .transport-btn.patch-load:hover {
-  background: linear-gradient(135deg, #a47ea4, #946e94);
-  box-shadow: 0 6px 16px rgba(196, 154, 196, 0.5);
+  background: var(--border-light);
 }
 
-/* Tooltip */
 .transport-tooltip {
   position: absolute;
   right: -10px;
   transform: translateX(100%);
   background: var(--text-primary);
   color: white;
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
-  font-size: 0.65rem;
+  font-size: 10px;
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .transport-tooltip::after {
   content: '';
   position: absolute;
-  left: -6px;
+  left: -5px;
   top: 50%;
   transform: translateY(-50%);
-  border: 6px solid transparent;
+  border: 5px solid transparent;
   border-right-color: var(--text-primary);
 }
 
@@ -319,31 +239,15 @@
   opacity: 1;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1200px) {
   .transport-sidebar {
     left: 10px;
-    width: 70px;
-    padding: var(--space-sm);
+    width: 64px;
+    padding: 12px 10px;
   }
   
   .transport-btn {
-    height: 40px;
-    font-size: 1rem;
-  }
-  
-  .transport-btn.patch-save,
-  .transport-btn.patch-load {
     height: 36px;
-    font-size: 0.9rem;
-  }
-  
-  .transport-volume-slider-container {
-    height: 50px;
-  }
-  
-  .transport-volume-slider-horizontal {
-    width: 50px;
   }
 }
 
@@ -356,9 +260,8 @@
     transform: none;
     flex-direction: row;
     width: auto;
-    height: auto;
-    padding: var(--space-sm) var(--space-md);
-    gap: var(--space-sm);
+    padding: 10px 14px;
+    gap: 10px;
   }
   
   .transport-buttons {
@@ -367,12 +270,6 @@
   }
   
   .transport-btn {
-    width: 44px;
-    height: 44px;
-  }
-  
-  .transport-btn.patch-save,
-  .transport-btn.patch-load {
     width: 40px;
     height: 40px;
   }
@@ -384,25 +281,24 @@
   .transport-volume {
     flex-direction: row;
     padding-top: 0;
-    padding-left: var(--space-sm);
+    padding-left: 10px;
     border-top: none;
     border-left: 1px solid var(--border-light);
   }
   
   .transport-volume-slider-container {
     height: auto;
-    width: 60px;
+    width: 50px;
   }
   
   .transport-volume-slider-horizontal {
     transform: none;
-    width: 50px;
   }
   
   .transport-patch-controls {
     flex-direction: row;
     padding-top: 0;
-    padding-left: var(--space-sm);
+    padding-left: 10px;
     border-top: none;
     border-left: 1px solid var(--border-light);
   }
@@ -410,9 +306,4 @@
   .transport-patch-label {
     display: none;
   }
-}
-
-/* Hide original master section's start button when floating transport is active */
-.master-panel-hidden .action-btn {
-  display: none;
 }
