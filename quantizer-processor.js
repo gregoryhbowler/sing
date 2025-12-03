@@ -247,19 +247,19 @@ class QuantizerProcessor extends AudioWorkletProcessor {
     }
     
     // Output debug info
-    if (debugValues) {
-      console.log('[Quantizer Debug]', {
-        input: `${debugValues.inputMin.toFixed(3)} to ${debugValues.inputMax.toFixed(3)}`,
-        output: `${debugValues.outputMin.toFixed(2)}V to ${debugValues.outputMax.toFixed(2)}V`,
-        uniqueNotes: debugValues.quantizedValues.size,
-        noteValues: Array.from(debugValues.quantizedValues).slice(0, 8).join(', '),
-        depth: parameters.depth[0].toFixed(2),
-        offset: parameters.offset[0].toFixed(2),
-        transpose: Math.round(parameters.transpose[0]),
-        scaleNotes: this.allowedNotes.length,
-        activeMask: this.noteMask.map((v, i) => v ? i : -1).filter(v => v >= 0).join(',')
-      });
-    }
+    // if (debugValues) {
+    //   console.log('[Quantizer Debug]', {
+    //     input: `${debugValues.inputMin.toFixed(3)} to ${debugValues.inputMax.toFixed(3)}`,
+    //     output: `${debugValues.outputMin.toFixed(2)}V to ${debugValues.outputMax.toFixed(2)}V`,
+    //     uniqueNotes: debugValues.quantizedValues.size,
+    //     noteValues: Array.from(debugValues.quantizedValues).slice(0, 8).join(', '),
+    //     depth: parameters.depth[0].toFixed(2),
+    //     offset: parameters.offset[0].toFixed(2),
+    //     transpose: Math.round(parameters.transpose[0]),
+    //     scaleNotes: this.allowedNotes.length,
+    //     activeMask: this.noteMask.map((v, i) => v ? i : -1).filter(v => v >= 0).join(',')
+    //   });
+    // }
     
     return true;
   }

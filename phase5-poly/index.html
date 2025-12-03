@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 5 Poly - 4-Voice Polyphonic Synthesis</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+  <!-- Sticky Control Bar - Always visible at top -->
+  <div class="sticky-control-bar" id="stickyControlBar">
+
+    <!-- Transport Section -->
+    <div class="control-section transport-section">
+      <div class="section-label">TRANSPORT</div>
+      <div class="control-group">
+        <div class="transport-indicator" id="transportIndicator"></div>
+        <button class="control-btn transport-btn" id="startBtn" title="Start Audio">
+          <span class="btn-icon">▶</span>
+          <span class="btn-label">Start</span>
+        </button>
+        <button class="control-btn transport-btn stop" id="stopBtn" title="Stop Audio" style="display: none;">
+          <span class="btn-icon">⏹</span>
+          <span class="btn-label">Stop</span>
+        </button>
+        <button class="control-btn transport-btn reset" id="resetClockBtn" title="Reset Clock to Step 1">
+          <span class="btn-icon">⏮</span>
+          <span class="btn-label">Reset</span>
+        </button>
+        <div class="volume-control">
+          <span class="volume-label">Vol</span>
+          <input type="range" class="volume-slider" id="stickyMasterVolume" min="0" max="1" step="0.01" value="0.3">
+          <span class="volume-value" id="stickyMasterVolumeValue">0.30</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patch Section -->
+    <div class="control-section patch-section">
+      <div class="section-label">PATCH</div>
+      <div class="control-group">
+        <button class="control-btn patch-btn" id="saveBtn" title="Save Patch to File">
+          <span class="btn-icon">💾</span>
+          <span class="btn-label">Save</span>
+        </button>
+        <button class="control-btn patch-btn" id="loadBtn" title="Load Patch from File">
+          <span class="btn-icon">📂</span>
+          <span class="btn-label">Load</span>
+        </button>
+        <input type="file" id="patchFileInput" accept=".json" style="display: none;">
+      </div>
+    </div>
+
+    <!-- Patch Bank Section -->
+    <div class="control-section patch-bank-section">
+      <div class="section-label">PATCH BANK <span class="bank-hint">(click=recall, right-click=store)</span></div>
+      <div class="patch-bank-grid" id="patchBankGrid">
+        <button class="patch-slot" data-slot="0" title="Slot 1 - Empty">1</button>
+        <button class="patch-slot" data-slot="1" title="Slot 2 - Empty">2</button>
+        <button class="patch-slot" data-slot="2" title="Slot 3 - Empty">3</button>
+        <button class="patch-slot" data-slot="3" title="Slot 4 - Empty">4</button>
+        <button class="patch-slot" data-slot="4" title="Slot 5 - Empty">5</button>
+        <button class="patch-slot" data-slot="5" title="Slot 6 - Empty">6</button>
+        <button class="patch-slot" data-slot="6" title="Slot 7 - Empty">7</button>
+        <button class="patch-slot" data-slot="7" title="Slot 8 - Empty">8</button>
+        <button class="patch-slot" data-slot="8" title="Slot 9 - Empty">9</button>
+        <button class="patch-slot" data-slot="9" title="Slot 10 - Empty">10</button>
+        <button class="patch-slot" data-slot="10" title="Slot 11 - Empty">11</button>
+        <button class="patch-slot" data-slot="11" title="Slot 12 - Empty">12</button>
+        <button class="patch-slot" data-slot="12" title="Slot 13 - Empty">13</button>
+        <button class="patch-slot" data-slot="13" title="Slot 14 - Empty">14</button>
+        <button class="patch-slot" data-slot="14" title="Slot 15 - Empty">15</button>
+        <button class="patch-slot" data-slot="15" title="Slot 16 - Empty">16</button>
+      </div>
+      <input type="file" id="patchSlotFileInput" accept=".json" style="display: none;">
+    </div>
+
+    <!-- Recorder Section -->
+    <div class="control-section recorder-section">
+      <div class="section-label">RECORDER</div>
+      <div class="control-group">
+        <div class="recorder-indicator" id="recorderIndicator"></div>
+        <div class="recorder-time" id="recorderTime">00:00.00</div>
+        <button class="control-btn recorder-btn record" id="recorderRecordBtn" title="Start Recording">
+          <span class="btn-icon">●</span>
+          <span class="btn-label">Record</span>
+        </button>
+        <button class="control-btn recorder-btn pause" id="recorderPauseBtn" title="Pause Recording" style="display: none;">
+          <span class="btn-icon">⏸</span>
+          <span class="btn-label">Pause</span>
+        </button>
+        <button class="control-btn recorder-btn resume" id="recorderResumeBtn" title="Resume Recording" style="display: none;">
+          <span class="btn-icon">▶</span>
+          <span class="btn-label">Resume</span>
+        </button>
+        <button class="control-btn recorder-btn stop" id="recorderStopBtn" title="Stop & Save" style="display: none;">
+          <span class="btn-icon">⏹</span>
+          <span class="btn-label">Stop</span>
+        </button>
+        <button class="control-btn recorder-btn download" id="recorderDownloadBtn" title="Download WAV" style="display: none;">
+          <span class="btn-icon">⬇</span>
+          <span class="btn-label">Download</span>
+        </button>
+        <button class="control-btn recorder-btn cancel" id="recorderCancelBtn" title="Cancel Recording" style="display: none;">
+          <span class="btn-icon">✕</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MIDI Status -->
+    <div class="control-section midi-section">
+      <div class="midi-status" id="midiStatus">
+        <span class="status-indicator" id="midiIndicator"></span>
+        <span id="midiStatusText">MIDI: Disconnected</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-main">PHASE 5 POLY</div>
+      <div class="logo-sub">4-voice polyphonic modular synthesis</div>
+    </div>
+  </div>
+
+  <div class="status-display" id="status">Initializing...</div>
+
+  <!-- GLOBAL CONTROLS -->
+  <div class="panel-section global-panel">
+    <h2 class="section-title">global controls</h2>
+
+    <div class="clock-source-section">
+      <label>Clock Source:</label>
+      <div class="clock-source-buttons">
+        <button class="clock-btn" id="clockJF1Btn" data-source="jf1">JF #1</button>
+        <button class="clock-btn" id="clockMIDIBtn" data-source="midi">MIDI Clock</button>
+        <button class="clock-btn active" id="clockInternalBtn" data-source="internal">Internal</button>
+      </div>
+      <div class="clock-division-control" id="clockDivisionControl" style="display: none;">
+        <label>Division:</label>
+        <select id="clockDivision">
+          <option value="1">1/64 note</option>
+          <option value="2">1/32 note</option>
+          <option value="3">1/16 triplet</option>
+          <option value="6" selected>1/16 note</option>
+          <option value="12">1/8 note</option>
+          <option value="24">1/4 note</option>
+          <option value="48">1/2 note (half bar)</option>
+          <option value="96">1 bar</option>
+          <option value="192">2 bars</option>
+          <option value="384">4 bars</option>
+        </select>
+      </div>
+      <div class="internal-clock-control" id="internalClockControl">
+        <div class="param-row">
+          <label>BPM</label>
+          <input type="range" id="internalClockBPM" min="30" max="300" step="1" value="120">
+          <span class="param-value" id="internalClockBPMValue">120</span>
+        </div>
+        <div class="param-row">
+          <label>Division</label>
+          <select id="internalClockDivision">
+            <option value="1">1/4 note</option>
+            <option value="2">1/8 note</option>
+            <option value="4" selected>1/16 note</option>
+            <option value="8">1/32 note</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="jf1-clock-control" id="jf1ClockControl" style="display: none;">
+        <h4>Just Friends #1 Clock</h4>
+        <div class="param-row">
+          <label>time (tempo)</label>
+          <input type="range" id="jf1Time" min="0" max="1" step="0.01" value="0.25">
+          <span class="param-value" id="jf1TimeValue">0.25</span>
+        </div>
+        <div class="param-row">
+          <label>intone</label>
+          <input type="range" id="jf1Intone" min="0" max="1" step="0.01" value="0.5">
+          <span class="param-value" id="jf1IntoneValue">0.50</span>
+        </div>
+        <div class="param-row">
+          <label>ramp</label>
+          <input type="range" id="jf1Ramp" min="0" max="1" step="0.01" value="0.5">
+          <span class="param-value" id="jf1RampValue">0.50</span>
+        </div>
+        <div class="param-row">
+          <label>curve</label>
+          <input type="range" id="jf1Curve" min="0" max="1" step="0.01" value="0.5">
+          <span class="param-value" id="jf1CurveValue">0.50</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="param-row">
+      <label>master volume</label>
+      <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.3">
+      <span class="param-value" id="masterVolumeValue">0.30</span>
+    </div>
+  </div>
+
+  <!-- VOICES -->
+  <div class="voices-container" id="voicesContainer">
+    <!-- Voice panels will be generated by JavaScript -->
+  </div>
+
+  <!-- FM OSCILLATORS -->
+  <div class="panel-section fm-osc-panel">
+    <h2 class="section-title">fm oscillators (4 mangroves)</h2>
+    <div class="fm-osc-grid" id="fmOscGrid">
+      <!-- FM oscillator controls generated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- MIXER -->
+  <div class="panel-section mixer-panel">
+    <h2 class="section-title">mixer</h2>
+    <div class="mixer-channels" id="mixerChannels">
+      <!-- Mixer channels generated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- SEND EFFECTS -->
+  <div class="panel-section sends-panel">
+    <h2 class="section-title">send effects</h2>
+    <div class="sends-grid" id="sendsGrid">
+      <!-- Send effects controls generated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- LFOs -->
+  <div class="panel-section lfo-panel">
+    <h2 class="section-title">lfos (12 global)</h2>
+    <div class="lfo-grid" id="lfoGrid">
+      <!-- LFO modules generated by JavaScript -->
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-hint">
+      Phase 5 Poly - MIDI Channels 1-4 mapped to Voices 1-4
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

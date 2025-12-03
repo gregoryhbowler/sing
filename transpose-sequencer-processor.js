@@ -76,7 +76,7 @@ class TransposeSequencerProcessor extends AudioWorkletProcessor {
     // Find current active cell
     const cell = this.cells[this.currentStep];
     this.currentTranspose = cell.active ? cell.transpose : 0;
-    
+
     // Send to main thread for UI updates
     this.port.postMessage({
       type: 'step-changed',
@@ -95,22 +95,35 @@ class TransposeSequencerProcessor extends AudioWorkletProcessor {
   }
 
   advanceSequence() {
-    // Increment repeat counter
-    this.currentRepeat++;
-    
     const currentCell = this.cells[this.currentStep];
-    const repeatsNeeded = currentCell.active ? currentCell.repeats : 1;
-    
-    // Check if we should advance to next step
-    if (this.currentRepeat >= repeatsNeeded) {
+
+    // Only count repeats for active cells
+    if (currentCell.active) {
+      this.currentRepeat++;
+
+      // Check if we've completed all repeats for this step
+      if (this.currentRepeat >= currentCell.repeats) {
+        this.currentRepeat = 0;
+        const prevStep = this.currentStep;
+        this.advanceStep();
+
+        // Trigger step pulse on every step advance
+        this.stepPulseRemaining = this.pulseDurationSamples;
+
+        // Detect wrap-around for reset pulse
+        if (prevStep > this.currentStep && this.playbackMode === 'forward') {
+          this.resetPulseRemaining = this.pulseDurationSamples;
+        } else if (prevStep < this.currentStep && this.playbackMode === 'backward') {
+          this.resetPulseRemaining = this.pulseDurationSamples;
+        }
+      }
+    } else {
+      // Current step is inactive - advance immediately
       this.currentRepeat = 0;
       const prevStep = this.currentStep;
       this.advanceStep();
-      
-      // Trigger step pulse on every step advance
       this.stepPulseRemaining = this.pulseDurationSamples;
-      
-      // If we wrapped to step 0, trigger reset pulse
+
       if (prevStep > this.currentStep && this.playbackMode === 'forward') {
         this.resetPulseRemaining = this.pulseDurationSamples;
       } else if (prevStep < this.currentStep && this.playbackMode === 'backward') {
@@ -135,69 +148,63 @@ class TransposeSequencerProcessor extends AudioWorkletProcessor {
 
   advanceForward() {
     // Find next active cell, wrapping around
+    // If no cells are active, just cycle through all steps
+    if (this.allInactive()) {
+      this.currentStep = (this.currentStep + 1) % 16;
+      return;
+    }
+
+    // Move to next step and keep looking until we find an active one
     const startStep = this.currentStep;
-    
     do {
       this.currentStep = (this.currentStep + 1) % 16;
-      
-      // If we've looped back to start and found no active cells, stay at current
-      if (this.currentStep === startStep) {
-        break;
-      }
-    } while (!this.cells[this.currentStep].active && !this.allInactive());
-    
-    // If all inactive, stay at step 0
-    if (this.allInactive()) {
-      this.currentStep = 0;
-    }
+    } while (!this.cells[this.currentStep].active && this.currentStep !== startStep);
   }
 
   advanceBackward() {
+    // Find previous active cell, wrapping around
+    if (this.allInactive()) {
+      this.currentStep = (this.currentStep - 1 + 16) % 16;
+      return;
+    }
+
     const startStep = this.currentStep;
-    
     do {
       this.currentStep = (this.currentStep - 1 + 16) % 16;
-      
-      if (this.currentStep === startStep) {
-        break;
-      }
-    } while (!this.cells[this.currentStep].active && !this.allInactive());
-    
-    if (this.allInactive()) {
-      this.currentStep = 0;
-    }
+    } while (!this.cells[this.currentStep].active && this.currentStep !== startStep);
   }
 
   advancePingPong() {
-    const startStep = this.currentStep;
-    let attempts = 0;
-    const maxAttempts = 32; // Prevent infinite loop
-    
-    do {
+    // Find next active cell in current direction, bouncing at boundaries
+    if (this.allInactive()) {
       this.currentStep += this.direction;
-      
-      // Bounce at boundaries
       if (this.currentStep >= 16) {
-        this.currentStep = 14; // Bounce back from 15
+        this.currentStep = 14;
         this.direction = -1;
       } else if (this.currentStep < 0) {
-        this.currentStep = 1; // Bounce back from 0
+        this.currentStep = 1;
         this.direction = 1;
       }
-      
-      attempts++;
-      if (attempts >= maxAttempts) {
-        this.currentStep = 0;
-        this.direction = 1;
-        break;
-      }
-      
-    } while (!this.cells[this.currentStep].active && !this.allInactive());
-    
-    if (this.allInactive()) {
-      this.currentStep = 0;
-      this.direction = 1;
+      return;
     }
+
+    const startStep = this.currentStep;
+    let attempts = 0;
+    do {
+      this.currentStep += this.direction;
+
+      // Bounce at boundaries
+      if (this.currentStep >= 16) {
+        this.currentStep = 14;
+        this.direction = -1;
+      } else if (this.currentStep < 0) {
+        this.currentStep = 1;
+        this.direction = 1;
+      }
+
+      attempts++;
+      if (attempts >= 32) break; // Safety limit
+    } while (!this.cells[this.currentStep].active && this.currentStep !== startStep);
   }
 
   advanceRandom() {
@@ -205,13 +212,14 @@ class TransposeSequencerProcessor extends AudioWorkletProcessor {
     const activeIndices = this.cells
       .map((cell, index) => cell.active ? index : -1)
       .filter(index => index !== -1);
-    
+
     if (activeIndices.length === 0) {
-      this.currentStep = 0;
+      // No active cells - advance sequentially
+      this.currentStep = (this.currentStep + 1) % 16;
       return;
     }
-    
-    // Pick random active cell
+
+    // Pick random active cell (for random mode, only jumping to active cells makes sense)
     const randomIndex = Math.floor(Math.random() * activeIndices.length);
     this.currentStep = activeIndices[randomIndex];
   }
@@ -295,18 +303,18 @@ class TransposeSequencerProcessor extends AudioWorkletProcessor {
     }
     
     // Debug logging
-    if (this.sampleCount % this.debugInterval === 0) {
-      const activeCells = this.cells.filter(c => c.active).length;
-      console.log('[Transpose Sequencer]', {
-        clockSource: this.clockSource,
-        step: this.currentStep,
-        repeat: `${this.currentRepeat}/${this.cells[this.currentStep].repeats}`,
-        transpose: this.currentTranspose,
-        mode: this.playbackMode,
-        activeCells: activeCells,
-        direction: this.direction
-      });
-    }
+    // if (this.sampleCount % this.debugInterval === 0) {
+    //   const activeCells = this.cells.filter(c => c.active).length;
+    //   console.log('[Transpose Sequencer]', {
+    //     clockSource: this.clockSource,
+    //     step: this.currentStep,
+    //     repeat: `${this.currentRepeat}/${this.cells[this.currentStep].repeats}`,
+    //     transpose: this.currentTranspose,
+    //     mode: this.playbackMode,
+    //     activeCells: activeCells,
+    //     direction: this.direction
+    //   });
+    // }
     
     return true;
   }

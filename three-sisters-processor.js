@@ -1,6 +1,7 @@
 // three-sisters-processor.js
-// Three Sisters Multi-Mode Filter - EDGE MODE
-// Allows chaotic behavior and near-instability, but with safety net to prevent total silence
+// Three Sisters Multi-Mode Filter - TRUE TO HARDWARE
+// Based on Mannequins Three Sisters Technical Map
+// Uses proper state-variable filter topology with self-oscillation capability
 
 class ThreeSistersProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
@@ -15,266 +16,276 @@ class ThreeSistersProcessor extends AudioWorkletProcessor {
 
   constructor() {
     super();
-    
+
     this.sampleRate = sampleRate;
-    
-    // Initialize 6 SVF filters (2 per block)
+
+    // Initialize 6 SVF filters (2 per block) - using trapezoidal integration for stability
     this.lowSVF1 = this.createSVF();
     this.lowSVF2 = this.createSVF();
     this.centreSVF1 = this.createSVF();
     this.centreSVF2 = this.createSVF();
     this.highSVF1 = this.createSVF();
     this.highSVF2 = this.createSVF();
-    
-    // Debug counters
+
+    // Self-oscillation noise injection for startup
+    this.noiseState = Math.random() * 2 - 1;
+
+    // Debug
     this.debugCounter = 0;
-    
-    console.log('Three Sisters processor initialized - FM: ±3 octaves (musical sweet spot)');
+
+    console.log('Three Sisters processor initialized - TRUE TO HARDWARE with self-oscillation');
   }
 
   createSVF() {
     return {
-      lp: 0.0,
-      bp: 0.0,
-      hp: 0.0
+      ic1eq: 0.0,  // Integrator 1 state
+      ic2eq: 0.0   // Integrator 2 state
     };
   }
 
   resetSVF(svf) {
-    svf.lp = 0.0;
-    svf.bp = 0.0;
-    svf.hp = 0.0;
+    svf.ic1eq = 0.0;
+    svf.ic2eq = 0.0;
   }
 
+  // Volt-per-octave frequency calculation
+  // Knob at noon = ~500Hz, full range ~30Hz to ~8kHz
   freqKnobToHz(knob) {
-    const octaves = (knob - 0.5) * 8; // ±4 octaves from center
+    // 8 octave range centered at 500Hz
+    const octaves = (knob - 0.5) * 8;
     return 500.0 * Math.pow(2, octaves);
   }
 
-  calculateFreqCoeff(cutoffHz) {
-    const omega = Math.PI * cutoffHz / this.sampleRate;
-    let f = 2.0 * Math.sin(omega);
-    
-    // Still clamp f coefficient for basic stability
-    f = Math.min(1.99, Math.max(0.0001, f));
-    
-    return f;
+  // SPAN uses exponential (octave) scaling like the hardware
+  // Per tech map: SPAN voltage added/subtracted from FREQ in V/oct domain
+  spanKnobToOctaves(knob) {
+    // At noon (0.5): 0 octaves spread
+    // At max (1.0): +3 octaves spread
+    // At min (0.0): -3 octaves spread (inverts LOW/HIGH)
+    return (knob - 0.5) * 6.0;
   }
 
-  processSVF(svf, input, freqCoeff, q) {
-    // MINIMAL input limiting - allow hot signals
-    input = Math.max(-50, Math.min(50, input));
-    
-    // Standard Chamberlin SVF
-    svf.hp = input - svf.lp - q * svf.bp;
-    svf.bp = svf.bp + freqCoeff * svf.hp;
-    svf.lp = svf.lp + freqCoeff * svf.bp;
-    
-    // REMOVED: tanh() soft clipping - let it get wild!
-    
-    // Denormal flush (essential for CPU, doesn't affect sound)
-    const denormalThreshold = 1e-15;
-    if (Math.abs(svf.lp) < denormalThreshold) svf.lp = 0;
-    if (Math.abs(svf.bp) < denormalThreshold) svf.bp = 0;
-    if (Math.abs(svf.hp) < denormalThreshold) svf.hp = 0;
-    
-    // SAFETY NET: Detect total failure and recover
-    // This is your insurance against permanent silence
-    if (!isFinite(svf.lp) || !isFinite(svf.bp) || !isFinite(svf.hp)) {
+  // Fast tanh approximation for analog warmth
+  fastTanh(x) {
+    if (x < -3) return -1;
+    if (x > 3) return 1;
+    const x2 = x * x;
+    return x * (27 + x2) / (27 + 9 * x2);
+  }
+
+  // SVF using trapezoidal integration (Zavalishin/VA topology)
+  // This is stable at high resonance and can self-oscillate cleanly
+  processSVF(svf, input, cutoffHz, resonance) {
+    // Prewarp cutoff frequency
+    const g = Math.tan(Math.PI * Math.min(cutoffHz, this.sampleRate * 0.49) / this.sampleRate);
+
+    // Resonance: 0 = no resonance, 1 = self-oscillation threshold, >1 = self-oscillating
+    // k = 2 - 2*R where R is the resonance factor (0-1 range maps to k = 2 down to 0)
+    const k = Math.max(0, 2.0 - 2.0 * resonance);
+
+    // Inject tiny noise to kick-start self-oscillation
+    this.noiseState = this.noiseState * 0.99 + (Math.random() - 0.5) * 0.0001;
+    const noisyInput = input + this.noiseState * resonance;
+
+    // Trapezoidal SVF
+    const d = 1.0 / (1.0 + g * (g + k));
+
+    const hp = (noisyInput - (g + k) * svf.ic1eq - svf.ic2eq) * d;
+    const v1 = g * hp;
+    const bp = v1 + svf.ic1eq;
+    svf.ic1eq = v1 + bp;
+
+    const v2 = g * bp;
+    const lp = v2 + svf.ic2eq;
+    svf.ic2eq = v2 + lp;
+
+    // Apply soft saturation for analog warmth (subtle, preserves dynamics)
+    const satAmount = 0.3 + resonance * 0.5;
+    const saturatedBp = this.fastTanh(bp * satAmount) / satAmount;
+    const saturatedLp = this.fastTanh(lp * satAmount) / satAmount;
+    const saturatedHp = this.fastTanh(hp * satAmount) / satAmount;
+
+    // Safety: reset on NaN/Inf
+    if (!isFinite(svf.ic1eq) || !isFinite(svf.ic2eq)) {
       this.resetSVF(svf);
-      return svf; // Will be silent for one buffer, then recovers
+      return { lp: 0, bp: 0, hp: 0 };
     }
-    
-    // EMERGENCY BRAKE: If values get absolutely insane (>1000), pull back
-    // This lets you get chaotic but prevents total meltdown
-    if (Math.abs(svf.lp) > 1000) svf.lp *= 0.5;
-    if (Math.abs(svf.bp) > 1000) svf.bp *= 0.5;
-    if (Math.abs(svf.hp) > 1000) svf.hp *= 0.5;
-    
-    return svf;
+
+    return {
+      lp: saturatedLp,
+      bp: saturatedBp,
+      hp: saturatedHp
+    };
   }
 
-  processLowBlock(input, cfLow, q, mode, antiResonanceAmount) {
-    const freqCoeff = this.calculateFreqCoeff(cfLow);
-    
-    this.processSVF(this.lowSVF1, input, freqCoeff, q);
-    const svf1Out = this.lowSVF1.lp;
-    this.processSVF(this.lowSVF2, svf1Out, freqCoeff, q);
-    
-    let mainOutput;
-    let complementaryOutput;
-    
+  // LOW block: Two SVFs in series, both at same cutoff
+  // Crossover mode: LP → LP = 24dB/oct lowpass
+  // Formant mode: LP → HP = 12dB/oct bandpass
+  processLowBlock(input, cfLow, resonance, mode, antiQ) {
+    const out1 = this.processSVF(this.lowSVF1, input, cfLow, resonance);
+    const out2 = this.processSVF(this.lowSVF2, out1.lp, cfLow, resonance);
+
+    let mainOutput, complementary;
+
     if (mode < 0.5) {
-      mainOutput = this.lowSVF2.lp;
-      complementaryOutput = this.lowSVF1.hp;
+      // Crossover: 24dB lowpass
+      mainOutput = out2.lp;
+      complementary = out1.hp;  // Mix in highs for notch effect
     } else {
-      mainOutput = this.lowSVF2.hp;
-      complementaryOutput = this.lowSVF1.lp;
+      // Formant: 12dB bandpass (LP→HP)
+      mainOutput = out2.hp;
+      complementary = out1.lp;
     }
-    
-    const output = mainOutput + complementaryOutput * antiResonanceAmount;
-    return output;
+
+    // Anti-resonance: mix complementary back in (creates notch/dry-wet)
+    return mainOutput + complementary * antiQ;
   }
 
-  processHighBlock(input, cfHigh, q, mode, antiResonanceAmount) {
-    const freqCoeff = this.calculateFreqCoeff(cfHigh);
-    
-    this.processSVF(this.highSVF1, input, freqCoeff, q);
-    const svf1Out = this.highSVF1.hp;
-    this.processSVF(this.highSVF2, svf1Out, freqCoeff, q);
-    
-    let mainOutput;
-    let complementaryOutput;
-    
+  // HIGH block: Two SVFs in series, both at same cutoff
+  // Crossover mode: HP → HP = 24dB/oct highpass
+  // Formant mode: HP → LP = 12dB/oct bandpass
+  processHighBlock(input, cfHigh, resonance, mode, antiQ) {
+    const out1 = this.processSVF(this.highSVF1, input, cfHigh, resonance);
+    const out2 = this.processSVF(this.highSVF2, out1.hp, cfHigh, resonance);
+
+    let mainOutput, complementary;
+
     if (mode < 0.5) {
-      mainOutput = this.highSVF2.hp;
-      complementaryOutput = this.highSVF1.lp;
+      // Crossover: 24dB highpass
+      mainOutput = out2.hp;
+      complementary = out1.lp;  // Mix in lows for notch effect
     } else {
-      mainOutput = this.highSVF2.lp;
-      complementaryOutput = this.highSVF1.hp;
+      // Formant: 12dB bandpass (HP→LP)
+      mainOutput = out2.lp;
+      complementary = out1.hp;
     }
-    
-    const output = mainOutput + complementaryOutput * antiResonanceAmount;
-    return output;
+
+    return mainOutput + complementary * antiQ;
   }
 
-  processCentreBlock(input, cfLow, cfHigh, cfCentre, q, mode, antiResonanceAmount) {
+  // CENTRE block: HP at cfLow → LP at cfHigh (crossover) or both at cfCentre (formant)
+  // Crossover mode: passes frequencies BETWEEN LOW and HIGH cutoffs
+  // Formant mode: 12dB bandpass at FREQ
+  processCentreBlock(input, cfLow, cfHigh, cfCentre, resonance, mode, antiQ) {
+    let out1, out2;
+
     if (mode < 0.5) {
-      const freqCoeff1 = this.calculateFreqCoeff(cfLow);
-      const freqCoeff2 = this.calculateFreqCoeff(cfHigh);
-      
-      this.processSVF(this.centreSVF1, input, freqCoeff1, q);
-      const svf1Out = this.centreSVF1.hp;
-      this.processSVF(this.centreSVF2, svf1Out, freqCoeff2, q);
-      
-      const mainOutput = this.centreSVF2.lp;
-      const comp1 = this.centreSVF1.lp;
-      const comp2 = this.centreSVF2.hp;
-      const complementaryOutput = (comp1 + comp2) * 0.5;
-      
-      return mainOutput + complementaryOutput * antiResonanceAmount;
-      
+      // Crossover: HP at cfLow, then LP at cfHigh
+      // This creates a "crossover" bandpass between the two cutoffs
+      out1 = this.processSVF(this.centreSVF1, input, cfLow, resonance);
+      out2 = this.processSVF(this.centreSVF2, out1.hp, cfHigh, resonance);
+
+      const mainOutput = out2.lp;
+      const comp1 = out1.lp;   // Frequencies below cfLow
+      const comp2 = out2.hp;   // Frequencies above cfHigh
+
+      return mainOutput + (comp1 + comp2) * antiQ * 0.5;
     } else {
-      const freqCoeff = this.calculateFreqCoeff(cfCentre);
-      
-      this.processSVF(this.centreSVF1, input, freqCoeff, q);
-      const svf1Out = this.centreSVF1.hp;
-      this.processSVF(this.centreSVF2, svf1Out, freqCoeff, q);
-      
-      const mainOutput = this.centreSVF2.lp;
-      const comp1 = this.centreSVF1.lp;
-      const comp2 = this.centreSVF2.hp;
-      const complementaryOutput = (comp1 + comp2) * 0.5;
-      
-      return mainOutput + complementaryOutput * antiResonanceAmount;
+      // Formant: both at cfCentre = 12dB bandpass
+      out1 = this.processSVF(this.centreSVF1, input, cfCentre, resonance);
+      out2 = this.processSVF(this.centreSVF2, out1.hp, cfCentre, resonance);
+
+      const mainOutput = out2.lp;
+      const comp1 = out1.lp;
+      const comp2 = out2.hp;
+
+      return mainOutput + (comp1 + comp2) * antiQ * 0.5;
     }
   }
 
   process(inputs, outputs, parameters) {
     const output = outputs[0];
-    
-    // Debug: Check if FM input bus exists (only log once)
+
     if (this.debugCounter === 0) {
-      console.log(`Three Sisters inputs: ${inputs.length} buses`);
-      console.log(`  Input 0 (audio): ${inputs[0] ? inputs[0].length + ' channels' : 'MISSING'}`);
-      console.log(`  Input 1 (FM): ${inputs[1] ? inputs[1].length + ' channels' : 'MISSING'}`);
+      console.log(`Three Sisters: ${inputs.length} input buses`);
     }
     this.debugCounter++;
-    
-    // Read audio + FM from a single 2-channel bus (merged in the node)
+
     const audioIn = inputs[0]?.[0] || new Float32Array(128);
     const fmIn = inputs[0]?.[1] || new Float32Array(128);
-    
+
     const lowOut = output[0];
     const centreOut = output[1];
     const highOut = output[2];
     const allOut = output[3];
-    
+
     if (!lowOut || !centreOut || !highOut || !allOut) return true;
-    
+
     for (let i = 0; i < audioIn.length; i++) {
       const freqKnob = parameters.freq[i] ?? parameters.freq[0];
       const spanKnob = parameters.span[i] ?? parameters.span[0];
       const quality = parameters.quality[i] ?? parameters.quality[0];
       const mode = parameters.mode[i] ?? parameters.mode[0];
       const fmAtten = parameters.fmAttenuverter[i] ?? parameters.fmAttenuverter[0];
-      
+
       const audioSample = audioIn[i];
       const fmSample = fmIn[i];
-      
-      // === FREQ CALCULATION ===
+
+      // === FREQ CALCULATION (V/oct) ===
       let baseFreqHz = this.freqKnobToHz(freqKnob);
-      
-      // fmAtten: 0.0 = full negative, 0.5 = off, 1.0 = full positive
-      const fmAmount = (fmAtten - 0.5) * 2.0; // Range: -1.0 to +1.0
-      
-      // BALANCED FM: ±3 octaves for musical filter sweeps
-      // Sweet spot between audibility and harshness
-      // With audio-rate modulation from Mangrove formant output (~±1.0),
-      // this creates dramatic but controllable filter movement
-      const fmVoltage = fmSample * fmAmount * 3.0;
+
+      // FM input with attenuverter: ±5V = ±5 octaves at full
+      const fmAmount = (fmAtten - 0.5) * 2.0;
+      const fmVoltage = fmSample * fmAmount * 5.0;  // ±5 octaves max
       const fmMultiplier = Math.pow(2, fmVoltage);
       let modulatedFreq = baseFreqHz * fmMultiplier;
-      
-      // RELAXED frequency limits - allow Nyquist approach
-      const nyquist = this.sampleRate * 0.48; // Right up to the edge
-      modulatedFreq = Math.max(5, Math.min(nyquist, modulatedFreq));
-      
-      // === SPAN CALCULATION ===
-      const spanAmount = (spanKnob - 0.5) * 2.0;
-      // RESTORED: Full 0.8 span range
-      const spanHz = modulatedFreq * Math.abs(spanAmount) * 0.8;
-      
+
+      // Frequency limits
+      const nyquist = this.sampleRate * 0.49;
+      modulatedFreq = Math.max(20, Math.min(nyquist, modulatedFreq));
+
+      // === SPAN CALCULATION (exponential, per tech doc) ===
+      // SPAN adds/subtracts octaves from FREQ for LOW/HIGH
+      const spanOctaves = this.spanKnobToOctaves(spanKnob);
+
       const cfCentre = modulatedFreq;
-      const cfLow = Math.max(5, Math.min(nyquist, modulatedFreq - spanHz));
-      const cfHigh = Math.max(5, Math.min(nyquist, modulatedFreq + spanHz));
-      
+      // LOW = FREQ - SPAN (in octave domain)
+      const cfLow = Math.max(20, Math.min(nyquist, modulatedFreq * Math.pow(2, -Math.abs(spanOctaves))));
+      // HIGH = FREQ + SPAN (in octave domain)
+      const cfHigh = Math.max(20, Math.min(nyquist, modulatedFreq * Math.pow(2, Math.abs(spanOctaves))));
+
       // === QUALITY CALCULATION ===
-      let q;
-      let antiResonanceAmount = 0;
-      
-      if (quality < 0.5) {
-        q = 1.0 / 0.707;
-        antiResonanceAmount = (0.5 - quality) * 2.0;
+      // Per tech doc: Noon = minimum resonance
+      // CW from noon = increasing resonance → self-oscillation at ~3 o'clock
+      // CCW from noon = anti-resonance (notch/dry-wet mixing)
+
+      let resonance = 0.0;
+      let antiQ = 0.0;
+
+      if (quality >= 0.5) {
+        // CW from noon: resonance
+        const resAmount = (quality - 0.5) * 2.0;  // 0 to 1
+        // Map to resonance: 0 = no resonance, 0.75 = edge of oscillation, 1.0+ = oscillating
+        // Use exponential curve for better control in the "sweet spot"
+        resonance = Math.pow(resAmount, 1.5) * 1.2;  // Can exceed 1.0 for guaranteed oscillation
       } else {
-        const resonanceAmount = (quality - 0.5) * 2.0;
-        
-        // RESTORED: High Q values for edge behavior
-        // But with slightly softer curve for more control at the top end
-        const minQ = 0.707;
-        const maxQ = 25.0; // Sweet spot: allows chaos, recoverable
-        const Q = minQ + (maxQ - minQ) * Math.pow(resonanceAmount, 1.8);
-        q = 1.0 / Q;
-        antiResonanceAmount = 0;
+        // CCW from noon: anti-resonance (dry/wet / notch)
+        resonance = 0.0;
+        antiQ = (0.5 - quality) * 2.0;  // 0 to 1
       }
-      
+
       // === PROCESS FILTER BLOCKS ===
-      const lowSample = this.processLowBlock(
-        audioSample, cfLow, q, mode, antiResonanceAmount
-      );
-      
-      const centreSample = this.processCentreBlock(
-        audioSample, cfLow, cfHigh, cfCentre, q, mode, antiResonanceAmount
-      );
-      
-      const highSample = this.processHighBlock(
-        audioSample, cfHigh, q, mode, antiResonanceAmount
-      );
-      
+      // Input gain: Mangrove outputs ~±1, scale up for filter drive
+      const inputGain = 2.0;
+      const scaledInput = audioSample * inputGain;
+
+      const lowSample = this.processLowBlock(scaledInput, cfLow, resonance, mode, antiQ);
+      const centreSample = this.processCentreBlock(scaledInput, cfLow, cfHigh, cfCentre, resonance, mode, antiQ);
+      const highSample = this.processHighBlock(scaledInput, cfHigh, resonance, mode, antiQ);
+
       // === OUTPUT ===
-      // RELAXED limiting - allow hot signals but prevent speaker damage
-      const safeLow = Math.max(-10, Math.min(10, lowSample));
-      const safeCentre = Math.max(-10, Math.min(10, centreSample));
-      const safeHigh = Math.max(-10, Math.min(10, highSample));
-      
-      lowOut[i] = safeLow;
-      centreOut[i] = safeCentre;
-      highOut[i] = safeHigh;
-      
-      // ALL output: equal mix
-      allOut[i] = (safeLow + safeCentre + safeHigh) / 3.0;
+      // Output gain to match Eurorack levels (~10Vpp)
+      // Soft clip at output stage for safety
+      const outputGain = 3.0;
+
+      lowOut[i] = this.fastTanh(lowSample * outputGain * 0.3) * 3.0;
+      centreOut[i] = this.fastTanh(centreSample * outputGain * 0.3) * 3.0;
+      highOut[i] = this.fastTanh(highSample * outputGain * 0.3) * 3.0;
+
+      // ALL output: equal mix of all three
+      allOut[i] = (lowOut[i] + centreOut[i] + highOut[i]) / 2.0;  // Divided by 2, not 3, for hotter output
     }
-    
+
     return true;
   }
 }

@@ -15,6 +15,7 @@ import { EnvelopeVCANode } from './EnvelopeVCANode.js';
 import { DJEqualizerUI } from './DJEqualizerUI.js';
 import { SaturationEffectUI } from './SaturationEffectUI.js';
 import { StandaloneMimeophon } from './mimeophon-standalone.js';
+import { StandaloneSarajewo } from './sarajewo-standalone.js';
 import GreyholeNode from './GreyholeNode.js';
 import { ZitaReverb } from './ZitaReverb.js';
 
@@ -56,6 +57,7 @@ class Phase5App {
     this.djEQ = null;
     this.saturation = null;
     this.mimeophon = null;
+    this.sarajewo = null;
     this.greyhole = null;
     this.zitaReverb = null;
     
@@ -194,7 +196,11 @@ class Phase5App {
       // Mimeophon (color delay)
       this.mimeophon = new StandaloneMimeophon(this.audioContext);
       await this.mimeophon.init();
-      
+
+      // Sarajewo (BBD analog delay)
+      this.sarajewo = new StandaloneSarajewo(this.audioContext);
+      await this.sarajewo.init();
+
       // Greyhole (diffusion reverb)
       this.greyhole = new GreyholeNode(this.audioContext);
       
@@ -202,7 +208,7 @@ class Phase5App {
       this.zitaReverb = new ZitaReverb(this.audioContext);
       await this.zitaReverb.init('./zita-reverb-processor.js');
       
-      console.log('✓ Effects chain created (EQ → Saturation → Mimeophon → Greyhole → Zita)');
+      console.log('✓ Effects chain created (EQ → Saturation → Mimeophon → Sarajewo → Greyhole → Zita)');
 
       this.setupScope1();
       this.setupScope2();
@@ -247,11 +253,12 @@ class Phase5App {
       // Scope2 → Effects Chain → Master → Destination
       this.scope2Analyser.connect(this.effectsInput);
 
-      // Effects chain: EQ → Saturation → Mimeophon → Greyhole → Zita
+      // Effects chain: EQ → Saturation → Mimeophon → Sarajewo → Greyhole → Zita
       this.effectsInput.connect(this.djEQ.input);
       this.djEQ.output.connect(this.saturation.input);
       this.saturation.output.connect(this.mimeophon.inputGain);
-      this.mimeophon.outputGain.connect(this.greyhole.input);
+      this.mimeophon.outputGain.connect(this.sarajewo.inputGain);
+      this.sarajewo.outputGain.connect(this.greyhole.input);
       this.greyhole.connect(this.zitaReverb.node);
       this.zitaReverb.node.connect(this.effectsOutput);
 
@@ -838,9 +845,10 @@ class Phase5App {
     container.appendChild(this.createDJEQUI());
     container.appendChild(this.createSaturationUI());
     container.appendChild(this.mimeophon.createUI());
+    container.appendChild(this.sarajewo.createUI());
     container.appendChild(this.createGreyholeUI());
     container.appendChild(this.createZitaUI());
-    
+
     console.log('✓ Effects UI initialized');
   }
   

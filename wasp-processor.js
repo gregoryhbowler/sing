@@ -1,6 +1,6 @@
 /**
  * Wasp-style Filter - AudioWorkletProcessor
- * 
+ *
  * Goals:
  * - 2-pole multimode SVF core (LP/BP/HP/Notch)
  * - Nonlinearity INSIDE the filter loop (dirty core, not just dirty output)
@@ -145,25 +145,13 @@ class WaspProcessor extends AudioWorkletProcessor {
       // Standard TPT SVF structure
       const v3 = v0 - this.ic2eq;
 
-      // Linear integrator outputs first
-      let v1 = a1 * this.ic1eq + a2 * v3;
-      let v2 = this.ic2eq + a2 * this.ic1eq + a3 * v3;
+      // Clean SVF integration (no nonlinearity in loop)
+      const v1 = a1 * this.ic1eq + a2 * v3;
+      const v2 = this.ic2eq + a2 * this.ic1eq + a3 * v3;
 
-      // Drive resonance path: nonlinearity inside the loop
-      const resDrive = 0.5 + driveParam * 1.5;
-
-      // Nonlinear "caps" – this is where we inject CMOS weirdness
-      v1 = this.cmos(v1 * resDrive, this.bias, driveParam * 0.8);
-      v2 = this.cmos(v2 * resDrive, this.bias * 0.5, driveParam * 0.8);
-
-      // Update states using the nonlinear integrator outputs
+      // Update states - standard TPT, no nonlinearity
       this.ic1eq = 2 * v1 - this.ic1eq;
       this.ic2eq = 2 * v2 - this.ic2eq;
-
-      // Mild saturation of states to keep them bounded & juicy
-      const stateDrive = 0.3 + driveParam * 0.7;
-      this.ic1eq = this.tanh(this.ic1eq * (1 + stateDrive * 0.5));
-      this.ic2eq = this.tanh(this.ic2eq * (1 + stateDrive * 0.5));
 
       // Compute outputs from nonlinear core
       const lp = v2;
@@ -188,9 +176,14 @@ class WaspProcessor extends AudioWorkletProcessor {
           break;
       }
 
-      // Gentle final clip to avoid total insanity on high drive/res
-      const outDrive = 1 + driveParam * 0.3;
-      out[i] = this.tanh(filtered * outDrive);
+      // Gain compensation for resonance (prevents signal loss at high Q)
+      const gainComp = 1 + resShaped * 2.5;
+
+      // Apply CMOS character to output (not inside loop)
+      // This gives Wasp flavor without destabilizing low frequencies
+      const outDrive = 1 + driveParam * 1.5;
+      const saturated = this.cmos(filtered * outDrive, this.bias, driveParam);
+      out[i] = saturated * gainComp;
     }
 
     this.frameCount++;

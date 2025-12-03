@@ -1,0 +1,1544 @@
+/* Phase 5 Poly - Main Styles */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Courier New', monospace;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 20px;
+  padding-top: 80px; /* Space for sticky control bar */
+}
+
+/* ===== STICKY CONTROL BAR ===== */
+.sticky-control-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+  border-bottom: 1px solid #2a2a4a;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.section-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Transport Indicator */
+.transport-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #444;
+  transition: all 0.3s ease;
+}
+
+.transport-indicator.running {
+  background: #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+  animation: pulse-transport 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-transport {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.6); }
+  50% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.8); }
+}
+
+/* Control Buttons */
+.control-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.control-btn:hover {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
+}
+
+.control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.control-btn .btn-icon {
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+.control-btn .btn-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Transport Buttons */
+.control-btn.transport-btn {
+  background: #1a2a1a;
+  border-color: #00ff88;
+  color: #00ff88;
+}
+
+.control-btn.transport-btn:hover {
+  background: #00ff88;
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.control-btn.transport-btn.stop {
+  background: #2a1a1a;
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.control-btn.transport-btn.stop:hover {
+  background: #ff4444;
+  color: #000;
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.4);
+}
+
+.control-btn.transport-btn.reset {
+  background: #1a1a2a;
+  border-color: #00d9ff;
+  color: #00d9ff;
+}
+
+.control-btn.transport-btn.reset:hover {
+  background: #00d9ff;
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.4);
+}
+
+/* Volume Control */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 1px solid #3a3a3a;
+}
+
+.volume-label {
+  font-size: 9px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.volume-slider {
+  width: 80px;
+  height: 4px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  outline: none;
+  appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #00d9ff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 217, 255, 0.5);
+}
+
+.volume-value {
+  min-width: 32px;
+  font-size: 10px;
+  color: #00d9ff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Patch Buttons */
+.control-btn.patch-btn {
+  background: #1a1a2a;
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.control-btn.patch-btn:hover {
+  background: #8b5cf6;
+  color: #000;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+}
+
+/* Patch Bank Section */
+.patch-bank-section {
+  flex-shrink: 0;
+}
+
+.patch-bank-section .section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.bank-hint {
+  font-size: 7px;
+  color: #555;
+  font-weight: 400;
+}
+
+.patch-bank-grid {
+  display: flex;
+  gap: 3px;
+}
+
+.patch-slot {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  background: #1a1a1a;
+  color: #666;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.patch-slot:hover {
+  background: #2a2a2a;
+  border-color: #4a4a4a;
+  color: #888;
+}
+
+.patch-slot.has-patch {
+  background: #1a2a1a;
+  border-color: #00ff88;
+  color: #00ff88;
+}
+
+.patch-slot.has-patch:hover {
+  background: #00ff88;
+  color: #000;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.patch-slot.active {
+  background: #00ff88;
+  border-color: #00ff88;
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+}
+
+.patch-slot.storing {
+  animation: pulse-store 0.5s ease-in-out;
+}
+
+@keyframes pulse-store {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); box-shadow: 0 0 15px rgba(139, 92, 246, 0.8); }
+}
+
+/* Recorder Section */
+.recorder-section .control-group {
+  gap: 6px;
+}
+
+.recorder-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #444;
+  transition: all 0.3s ease;
+}
+
+.recorder-indicator.recording {
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+  animation: pulse-rec 1s ease-in-out infinite;
+}
+
+.recorder-indicator.paused {
+  background: #f59e0b;
+  animation: blink-rec 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+@keyframes blink-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.recorder-time {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #888;
+  padding: 4px 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  font-family: inherit;
+  min-width: 65px;
+  text-align: center;
+}
+
+.recorder-time.recording {
+  color: #ef4444;
+}
+
+.recorder-time.paused {
+  color: #f59e0b;
+}
+
+/* Recorder Buttons */
+.control-btn.recorder-btn.record {
+  background: #2a1a1a;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.control-btn.recorder-btn.record:hover {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.control-btn.recorder-btn.pause {
+  background: #2a2a1a;
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.control-btn.recorder-btn.pause:hover {
+  background: #f59e0b;
+  color: #000;
+}
+
+.control-btn.recorder-btn.resume {
+  background: #1a2a1a;
+  border-color: #00ff88;
+  color: #00ff88;
+}
+
+.control-btn.recorder-btn.resume:hover {
+  background: #00ff88;
+  color: #000;
+}
+
+.control-btn.recorder-btn.stop {
+  background: #2a2a2a;
+  border-color: #888;
+  color: #888;
+}
+
+.control-btn.recorder-btn.stop:hover {
+  background: #888;
+  color: #000;
+}
+
+.control-btn.recorder-btn.download {
+  background: #1a2a3a;
+  border-color: #00d9ff;
+  color: #00d9ff;
+}
+
+.control-btn.recorder-btn.download:hover {
+  background: #00d9ff;
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.4);
+}
+
+.control-btn.recorder-btn.cancel {
+  padding: 6px 8px;
+  background: transparent;
+  border-color: transparent;
+  color: #666;
+}
+
+.control-btn.recorder-btn.cancel:hover {
+  color: #ff4444;
+}
+
+/* MIDI Section */
+.midi-section {
+  margin-left: auto;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 8px;
+  border: 1px solid #2a2a3e;
+}
+
+.logo-main {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #00d9ff;
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+}
+
+.logo-sub {
+  font-size: 10px;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.midi-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #444;
+  transition: all 0.3s ease;
+}
+
+.status-indicator.connected {
+  background: #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+}
+
+.status-indicator.disconnected {
+  background: #ff4444;
+}
+
+/* Status Display */
+.status-display {
+  padding: 12px 20px;
+  background: #1a1a1a;
+  border-left: 4px solid #666;
+  margin-bottom: 20px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.status-display.ready {
+  border-left-color: #00ff88;
+  background: #0a1a0a;
+}
+
+.status-display.error {
+  border-left-color: #ff4444;
+  background: #1a0a0a;
+}
+
+/* Panel Sections */
+.panel-section {
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  color: #00d9ff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #2a2a2a;
+  padding-bottom: 8px;
+}
+
+/* Parameter Rows */
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.param-row label {
+  min-width: 80px;
+  color: #aaa;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.param-row input[type="range"] {
+  flex: 1;
+  height: 6px;
+  background: #2a2a2a;
+  border-radius: 3px;
+  outline: none;
+  appearance: none;
+}
+
+.param-row input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #00d9ff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 217, 255, 0.6);
+}
+
+.param-row input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #00d9ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(0, 217, 255, 0.6);
+}
+
+.param-value {
+  min-width: 45px;
+  text-align: right;
+  color: #00d9ff;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* Global Controls */
+.global-panel .clock-source-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.clock-source-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.clock-btn {
+  flex: 1;
+  padding: 10px;
+  background: #2a2a2a;
+  color: #aaa;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.clock-btn:hover {
+  background: #3a3a3a;
+}
+
+.clock-btn.active {
+  background: #00d9ff;
+  color: #000;
+  border-color: #00d9ff;
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.4);
+}
+
+.clock-division-control {
+  margin-top: 10px;
+}
+
+.clock-division-control select {
+  width: 100%;
+  padding: 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* Voice Panels */
+.voices-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.voice-panel {
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.voice-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: #1a1a1a;
+  cursor: pointer;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.voice-expand-btn {
+  background: none;
+  border: none;
+  color: #00d9ff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+}
+
+.voice-header h3 {
+  flex: 1;
+  font-size: 13px;
+  color: #00d9ff;
+  text-transform: uppercase;
+}
+
+.voice-quick-info {
+  font-size: 10px;
+  color: #888;
+}
+
+.voice-active-btn {
+  background: none;
+  border: 2px solid #00ff88;
+  color: #00ff88;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.voice-active-btn.active {
+  background: #00ff88;
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+}
+
+.voice-content {
+  padding: 15px;
+  display: block;
+}
+
+.voice-panel.collapsed .voice-content {
+  display: none;
+}
+
+.param-section {
+  margin-bottom: 15px;
+}
+
+.param-section h4 {
+  font-size: 11px;
+  color: #00d9ff;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+/* Transpose Sequencer */
+.transpose-seq-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.transpose-step {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.transpose-step.current {
+  border-color: #00d9ff;
+  background: #1a2a3a;
+  box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+}
+
+.transpose-step.active {
+  border-color: #00ff88;
+  background: #1a2a1a;
+}
+
+.transpose-step .step-number {
+  font-size: 9px;
+  color: #666;
+  font-weight: 600;
+}
+
+.transpose-step input[type="number"] {
+  width: 100%;
+  padding: 3px 2px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 10px;
+  text-align: center;
+}
+
+.transpose-step input[type="number"]:focus {
+  outline: none;
+  border-color: #00d9ff;
+}
+
+.step-active-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  color: #888;
+  cursor: pointer;
+}
+
+.step-active-toggle input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  accent-color: #00ff88;
+}
+
+.transpose-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.transpose-controls label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.transpose-controls select {
+  padding: 5px 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.transpose-clear-btn {
+  margin-left: auto;
+  padding: 5px 10px;
+  background: #2a2a2a;
+  color: #ff6666;
+  border: 1px solid #ff6666;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.transpose-clear-btn:hover {
+  background: #ff6666;
+  color: #000;
+}
+
+/* Quantizer Section */
+.quantizer-section {
+  background: #1a1a2a;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #2a2a4a;
+}
+
+/* Piano Keyboard */
+.piano-keyboard {
+  position: relative;
+  height: 80px;
+  margin: 12px 0;
+  user-select: none;
+}
+
+.piano-white-keys {
+  display: flex;
+  height: 100%;
+  gap: 2px;
+}
+
+.piano-key.white {
+  flex: 1;
+  background: linear-gradient(180deg, #e8e8e8 0%, #fff 10%, #d0d0d0 100%);
+  border: 1px solid #888;
+  border-radius: 0 0 4px 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.piano-key.white span {
+  font-size: 9px;
+  color: #666;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.piano-key.white:hover {
+  background: linear-gradient(180deg, #f5f5f5 0%, #fff 10%, #e0e0e0 100%);
+}
+
+.piano-key.white.active {
+  background: linear-gradient(180deg, #00cc66 0%, #00ff88 10%, #00aa55 100%);
+  border-color: #008844;
+  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.5);
+}
+
+.piano-key.white.active span {
+  color: #004422;
+}
+
+.piano-key.white:not(.active) {
+  opacity: 0.5;
+}
+
+.piano-black-keys {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  pointer-events: none;
+}
+
+.piano-key.black {
+  position: absolute;
+  width: 10%;
+  height: 100%;
+  background: linear-gradient(180deg, #1a1a1a 0%, #333 50%, #0a0a0a 100%);
+  border: 1px solid #000;
+  border-radius: 0 0 3px 3px;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 3px;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+.piano-key.black span {
+  font-size: 7px;
+  color: #888;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.piano-key.black:hover {
+  background: linear-gradient(180deg, #2a2a2a 0%, #444 50%, #1a1a1a 100%);
+}
+
+.piano-key.black.active {
+  background: linear-gradient(180deg, #006633 0%, #00aa55 50%, #004422 100%);
+  border-color: #00ff88;
+  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.5);
+}
+
+.piano-key.black.active span {
+  color: #00ff88;
+}
+
+.piano-key.black:not(.active) {
+  opacity: 0.5;
+}
+
+.quantizer-section select {
+  width: 100%;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.quantizer-section .param-row {
+  margin-bottom: 8px;
+}
+
+.quantizer-section .param-row:last-child {
+  margin-bottom: 0;
+}
+
+/* FM Oscillators Grid */
+.fm-osc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.fm-osc-module {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #2a2a2a;
+}
+
+.fm-osc-module h4 {
+  font-size: 12px;
+  color: #00d9ff;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Mixer */
+.mixer-channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.mixer-channel {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #2a2a2a;
+}
+
+.mixer-channel h4 {
+  font-size: 12px;
+  color: #00d9ff;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.mixer-channel h5 {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  margin: 12px 0 8px 0;
+  padding-top: 8px;
+  border-top: 1px solid #2a2a2a;
+  letter-spacing: 1px;
+}
+
+.mixer-channel select {
+  width: 100%;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.saturation-section,
+.sends-section {
+  margin-top: 8px;
+}
+
+.mixer-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mixer-mute-btn,
+.mixer-solo-btn {
+  flex: 1;
+  padding: 8px;
+  background: #2a2a2a;
+  color: #aaa;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.mixer-mute-btn:hover,
+.mixer-solo-btn:hover {
+  background: #3a3a3a;
+}
+
+.mixer-mute-btn.active {
+  background: #ff4444;
+  color: #fff;
+  border-color: #ff4444;
+}
+
+.mixer-solo-btn.active {
+  background: #ffaa00;
+  color: #000;
+  border-color: #ffaa00;
+}
+
+/* Value Display in Mixer */
+.mixer-channel .value-display {
+  min-width: 40px;
+  text-align: right;
+  color: #00d9ff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* USB Audio Channel */
+.usb-audio-channel {
+  border-color: #8b5cf6;
+}
+
+.usb-audio-channel h4 {
+  color: #8b5cf6;
+}
+
+.usb-controls {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.usb-enable-btn {
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+}
+
+.usb-enable-btn:hover {
+  background: #3a3a3a;
+  border-color: #8b5cf6;
+}
+
+.usb-enable-btn.active {
+  background: #8b5cf6;
+  color: #000;
+  border-color: #8b5cf6;
+}
+
+/* Send Effects */
+.sends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.send-module {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #2a2a2a;
+}
+
+.send-module-large {
+  min-width: 280px;
+}
+
+.send-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.send-header h4 {
+  margin: 0;
+}
+
+.send-header select {
+  padding: 4px 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.send-module h4 {
+  font-size: 12px;
+  color: #00d9ff;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.send-controls-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Zone Buttons (Mimeophon) */
+.zone-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.zone-btn {
+  flex: 1;
+  padding: 8px 4px;
+  background: #2a2a2a;
+  color: #888;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.zone-btn .zone-range {
+  font-size: 8px;
+  font-weight: 400;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+.zone-btn:hover {
+  background: #3a3a3a;
+}
+
+.zone-btn.active {
+  background: #00d9ff;
+  color: #000;
+  border-color: #00d9ff;
+  box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+}
+
+/* Toggle Buttons */
+.toggle-buttons {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  color: #888;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: #3a3a3a;
+}
+
+.toggle-btn.active {
+  background: #ff8800;
+  color: #000;
+  border-color: #ff8800;
+}
+
+/* Value Display */
+.send-module .value-display {
+  min-width: 50px;
+  text-align: right;
+  color: #00d9ff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* LFO Grid */
+.lfo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.lfo-module {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.lfo-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #151515;
+  cursor: pointer;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.lfo-expand-btn {
+  background: none;
+  border: none;
+  color: #00d9ff;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+}
+
+.lfo-header h4 {
+  flex: 1;
+  font-size: 11px;
+  color: #00d9ff;
+  text-transform: uppercase;
+}
+
+.lfo-content {
+  padding: 12px;
+  display: block;
+}
+
+.lfo-module.collapsed .lfo-content {
+  display: none;
+}
+
+/* LFO Clock Sync */
+.lfo-sync-section {
+  background: #1a1a2a;
+  padding: 8px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border: 1px solid #2a2a4a;
+}
+
+.lfo-sync-btn {
+  padding: 4px 12px;
+  background: #2a2a2a;
+  color: #888;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.lfo-sync-btn:hover {
+  background: #3a3a3a;
+}
+
+.lfo-sync-btn.active {
+  background: #00d9ff;
+  color: #000;
+  border-color: #00d9ff;
+}
+
+.lfo-sync-division {
+  padding: 4px 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.lfo-sync-division:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Transport Controls */
+.transport-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.transport-btn,
+.patch-btn {
+  padding: 12px 24px;
+  background: #2a2a2a;
+  color: #00d9ff;
+  border: 1px solid #00d9ff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.transport-btn:hover,
+.patch-btn:hover {
+  background: #00d9ff;
+  color: #000;
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
+}
+
+.btn-icon {
+  margin-right: 6px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 11px;
+  border-top: 1px solid #2a2a2a;
+  margin-top: 20px;
+}
+
+.footer-hint {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a;
+}
+
+/* ===== MIDI LEARN ===== */
+
+/* MIDI Learn mode indicator on body */
+body.midi-learn-mode {
+  cursor: crosshair;
+}
+
+body.midi-learn-mode::before {
+  content: 'MIDI LEARN: Move a knob on your controller...';
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff8800;
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 2000;
+  animation: pulse-learn 1s ease-in-out infinite;
+}
+
+@keyframes pulse-learn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Slider/knob in MIDI Learn waiting state */
+.midi-learn-waiting {
+  outline: 2px solid #ff8800 !important;
+  outline-offset: 2px;
+  animation: pulse-learn-outline 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-learn-outline {
+  0%, 100% { outline-color: #ff8800; }
+  50% { outline-color: #ffcc00; }
+}
+
+/* Slider/knob with active MIDI mapping */
+.midi-mapped {
+  position: relative;
+}
+
+.midi-mapped::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  background: #00ff88;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 255, 136, 0.6);
+}
+
+/* MIDI mapping indicator badge */
+.midi-mapping-badge {
+  display: inline-block;
+  background: #00ff88;
+  color: #000;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Param row with MIDI mapping visual indicator */
+.param-row.midi-mapped label::after {
+  content: attr(data-midi-cc);
+  display: inline-block;
+  background: #00ff88;
+  color: #000;
+  font-size: 7px;
+  font-weight: 700;
+  padding: 1px 3px;
+  border-radius: 2px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Context menu for MIDI Learn */
+.midi-learn-menu {
+  position: fixed;
+  background: #2a2a2a;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 3000;
+  font-size: 11px;
+}
+
+.midi-learn-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.1s ease;
+}
+
+.midi-learn-menu-item:hover {
+  background: #3a3a3a;
+}
+
+.midi-learn-menu-item.learn {
+  color: #ff8800;
+}
+
+.midi-learn-menu-item.remove {
+  color: #ff4444;
+}
+
+.midi-learn-menu-item.disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.midi-learn-menu-item.disabled:hover {
+  background: transparent;
+}
+
+.midi-learn-menu-separator {
+  height: 1px;
+  background: #3a3a3a;
+  margin: 4px 0;
+}
+
+.midi-learn-menu-item .menu-icon {
+  width: 16px;
+  text-align: center;
+}
+
+.midi-learn-menu-item .menu-cc {
+  margin-left: auto;
+  color: #888;
+  font-size: 10px;
+}

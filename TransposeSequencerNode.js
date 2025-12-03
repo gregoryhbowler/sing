@@ -233,10 +233,8 @@ export class TransposeSequencerNode extends AudioWorkletNode {
    */
   trigger() {
     if (this.clockSource !== 'rene') {
-      console.warn('trigger() only works in René clock mode');
       return;
     }
-    
     this.port.postMessage({ type: 'external-trigger' });
   }
 

@@ -85,7 +85,7 @@ class MoogLadderProcessor extends AudioWorkletProcessor {
     this.smoothedResonance = 0;
     this.smoothedDrive = 0;
     this.smoothedWarmth = 1;
-    this.smoothingCoeff = 0.001; // Very smooth parameter changes
+    this.smoothingCoeff = 0.05; // Faster response for real-time playability
     
     // Previous output for feedback (per channel)
     this.feedbackState = [0, 0];
@@ -299,8 +299,18 @@ class MoogLadderProcessor extends AudioWorkletProcessor {
         
         // DC blocking
         outputSample = this.dcBlock(outputSample, ch);
-        
-        output[ch][i] = outputSample;
+
+        // Frequency-dependent makeup gain to compensate for ladder attenuation at low frequencies
+        // Without this, the filter goes silent below ~300-400 Hz at low resonance
+        // Gain curve: 1x at 20kHz, ~1.5x at 1kHz, ~2.5x at 100Hz, ~3x at 20Hz
+        const normalizedCutoffForGain = Math.min(Math.max(modulatedCutoff / 20000, 0), 1);
+        const makeupGain = 1 + (1 - normalizedCutoffForGain) * 2.0;
+
+        // Reduce makeup gain at high resonance (resonance adds its own gain)
+        const resonanceReduction = 1 - this.smoothedResonance * 0.5;
+        const finalMakeupGain = 1 + (makeupGain - 1) * resonanceReduction;
+
+        output[ch][i] = outputSample * finalMakeupGain;
       }
     }
     

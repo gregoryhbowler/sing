@@ -146,15 +146,17 @@ class MimeophonProcessor extends AudioWorkletProcessor {
     }
     
     createHaloState() {
+        // Allpass diffuser buffers - longer delays for more audible reverb effect
+        // Prime numbers reduce metallic resonances
         return {
             buffers: [
-                new Float32Array(512),
-                new Float32Array(768),
-                new Float32Array(1024),
-                new Float32Array(384)
+                new Float32Array(1307),   // ~27ms at 48kHz
+                new Float32Array(1811),   // ~38ms
+                new Float32Array(2473),   // ~52ms
+                new Float32Array(3181)    // ~66ms
             ],
             indices: [0, 0, 0, 0],
-            g: [0.5, 0.45, 0.4, 0.35]
+            g: [0.6, 0.55, 0.5, 0.45]  // Slightly higher coefficients for more diffusion
         };
     }
     
@@ -347,7 +349,10 @@ class MimeophonProcessor extends AudioWorkletProcessor {
             haloState.indices[i] = (index + 1) % buffer.length;
             signal = output;
         }
-        return signal * 0.7 + input * 0.3;
+        // Mix depends on amount: low halo = more dry, high halo = more wet
+        const wetMix = 0.5 + amount * 0.4;  // 0.5-0.9 wet
+        const dryMix = 1.0 - wetMix;         // 0.1-0.5 dry
+        return signal * wetMix + input * dryMix;
     }
     
     process(inputs, outputs, parameters) {

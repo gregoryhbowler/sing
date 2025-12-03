@@ -12,26 +12,35 @@ export class LFONode extends AudioWorkletNode {
       channelCountMode: 'explicit',
       channelInterpretation: 'discrete'
     });
-    
+
     this.lfoIndex = lfoIndex;
-    
+    this.ctx = context;
+
     // Store parameter references
     this.params = {
       rate: this.parameters.get('rate'),
       waveform: this.parameters.get('waveform'),
       phase: this.parameters.get('phase')
     };
-    
+
+    // Clock sync state
+    this.clockSyncEnabled = false;
+    this.clockDivision = 1; // 1 = 1 cycle per clock, 2 = 2 cycles per clock, 0.5 = half cycle, etc.
+    this.clockTickCount = 0;
+    this.lastClockTime = 0;
+    this.clockIntervalMs = 500; // Estimated clock interval (updated on each tick)
+    this.freeRunningRate = 1.0; // Store free-running rate when sync is enabled
+
     // Create output gain
     this.output = context.createGain();
     this.connect(this.output);
-    
+
     // Create two destination routing chains (A and B)
     this.destinations = [
       this.createDestinationChain(),
       this.createDestinationChain()
     ];
-    
+
     console.log(`✓ LFO ${lfoIndex + 1} created`);
   }
 
@@ -266,6 +275,101 @@ export class LFONode extends AudioWorkletNode {
       depth: dest.depth.gain.value,
       offset: dest.offset.offset.value,
       mode: dest.mode
+    };
+  }
+
+  // ========== CLOCK SYNC ==========
+
+  /**
+   * Enable/disable clock sync
+   * When enabled, LFO rate is derived from incoming clock ticks
+   */
+  setClockSync(enabled) {
+    this.clockSyncEnabled = enabled;
+
+    if (enabled) {
+      // Store current rate as free-running rate
+      this.freeRunningRate = this.params.rate.value;
+      this.clockTickCount = 0;
+      console.log(`LFO ${this.lfoIndex + 1}: Clock sync enabled (div: ${this.clockDivision})`);
+    } else {
+      // Restore free-running rate
+      this.params.rate.value = this.freeRunningRate;
+      console.log(`LFO ${this.lfoIndex + 1}: Clock sync disabled, rate: ${this.freeRunningRate.toFixed(2)} Hz`);
+    }
+  }
+
+  /**
+   * Set clock division (how many base clock ticks per LFO cycle)
+   * Base clock ticks at 16th notes (4 ticks per beat)
+   * @param {number} division - Ticks per LFO cycle
+   *   1 = 1 tick per cycle (1/16 note, fastest)
+   *   2 = 2 ticks per cycle (1/8 note)
+   *   4 = 4 ticks per cycle (1/4 note / 1 beat)
+   *   16 = 16 ticks per cycle (1 bar / 4 beats)
+   *   64 = 64 ticks per cycle (4 bars)
+   *   128 = 128 ticks per cycle (8 bars, slowest)
+   */
+  setClockDivision(division) {
+    this.clockDivision = Math.max(1, Math.min(256, division));
+    console.log(`LFO ${this.lfoIndex + 1}: Clock division set to ${this.clockDivision} ticks/cycle`);
+
+    // Update rate if sync is enabled
+    if (this.clockSyncEnabled && this.clockIntervalMs > 0) {
+      this.updateSyncedRate();
+    }
+  }
+
+  /**
+   * Called on each clock tick from the main app
+   * Updates the LFO rate based on clock tempo
+   */
+  clockTick() {
+    if (!this.clockSyncEnabled) return;
+
+    const now = performance.now();
+
+    if (this.lastClockTime > 0) {
+      // Calculate interval between ticks
+      const interval = now - this.lastClockTime;
+      // Smooth the interval estimation
+      this.clockIntervalMs = this.clockIntervalMs * 0.7 + interval * 0.3;
+      this.updateSyncedRate();
+    }
+
+    this.lastClockTime = now;
+    this.clockTickCount++;
+  }
+
+  /**
+   * Update LFO rate based on clock interval and division
+   * Base clock ticks at 16th notes. Division = ticks per LFO cycle.
+   *
+   * At 120 BPM: tickInterval = 125ms, ticksPerSecond = 8
+   *   division 1 (1/16): rate = 8 Hz (one cycle per 16th note)
+   *   division 4 (1/4): rate = 2 Hz (one cycle per beat)
+   *   division 16 (1 bar): rate = 0.5 Hz (one cycle per bar)
+   */
+  updateSyncedRate() {
+    // Ticks per second based on measured interval
+    const ticksPerSecond = 1000 / this.clockIntervalMs;
+
+    // LFO rate = ticksPerSecond / division
+    const syncedRate = ticksPerSecond / this.clockDivision;
+
+    // Clamp to valid range
+    this.params.rate.value = Math.max(0.001, Math.min(100, syncedRate));
+  }
+
+  /**
+   * Get current clock sync state
+   */
+  getClockSyncState() {
+    return {
+      enabled: this.clockSyncEnabled,
+      division: this.clockDivision,
+      estimatedIntervalMs: this.clockIntervalMs,
+      currentRate: this.params.rate.value
     };
   }
 
